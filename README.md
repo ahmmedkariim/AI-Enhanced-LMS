@@ -1,9 +1,16 @@
 # 🎓 AI-Enhanced LMS with Hybrid Learning, DMN & Executable BPMN
 
+![Camunda](https://img.shields.io/badge/Camunda-7%20Community-orange)
+![Python](https://img.shields.io/badge/Python-3.10+-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-In%20Development-yellow)
+
 > **Course:** Software Process Engineering (SE396 / CSE4401)
 > **Platform:** Camunda 7 Community Edition + Python
 
 An executable BPMN-based Learning Management System featuring adaptive learning paths, LLM-generated quizzes, gamification, DMN decisions, and hybrid classroom engagement.
+
+> 📖 **New to Git/GitHub?** See [`docs/GITHUB_SETUP.md`](docs/GITHUB_SETUP.md) for step-by-step instructions.
 
 ---
 
