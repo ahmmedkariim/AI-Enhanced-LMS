@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  id="Definitions_Gamification"
+                  targetNamespace="http://camunda.org/schema/lms"
+                  exporter="Camunda Modeler"
+                  exporterVersion="5.21.0">
+
+  <bpmn:process id="Process_Gamification" name="Gamification and Reward Process" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:laneSet id="LaneSet_Gamification">
+      <bpmn:lane id="GM_Lane_Student" name="Student">
+        <bpmn:flowNodeRef>GM_Start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Task_ViewAchievement</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_End</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="GM_Lane_LMS" name="LMS System">
+        <bpmn:flowNodeRef>GM_Task_DetermineReward</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Gateway_RewardTier</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Gateway_IncSplit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Gateway_IncJoin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Task_SendAchievementEmail</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Gateway_Milestone</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Task_UnlockAchievement</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="GM_Lane_Engine" name="Gamification Engine">
+        <bpmn:flowNodeRef>GM_Task_AwardPremiumBadge</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Task_AwardStandardBadge</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Task_AwardParticipation</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Task_UpdatePoints</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Task_UpdateLeaderboard</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Task_UpdateAnalytics</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GM_Join_BadgeTier</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+
+    <!-- START: An activity was completed (quiz, team task, exploration, etc.) -->
+    <bpmn:startEvent id="GM_Start" name="Activity Completed">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="start">
+          <camunda:script scriptFormat="JavaScript">
+            execution.setVariable("processStartTime", new Date().toISOString());
+          </camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
+      <bpmn:outgoing>GM_Flow_01</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- BUSINESS RULE TASK: Calls DMN 2 to determine reward -->
+    <!-- Input variables: activityType, performance, collaborationLevel -->
+    <!-- Output: rewardResult.rewardType, rewardResult.pointsAwarded, rewardResult.badgeIcon -->
+    <bpmn:businessRuleTask id="GM_Task_DetermineReward"
+                           name="Determine Reward (DMN)"
+                           camunda:decisionRef="GamificationRewardDecision"
+                           camunda:resultVariable="rewardResult"
+                           camunda:mapDecisionResult="singleResult">
+      <bpmn:incoming>GM_Flow_01</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_02</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- EXCLUSIVE GATEWAY: Route by reward tier -->
+    <bpmn:exclusiveGateway id="GM_Gateway_RewardTier" name="Reward Tier?" default="GM_Flow_Tier_Default">
+      <bpmn:incoming>GM_Flow_02</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_Tier_Premium</bpmn:outgoing>
+      <bpmn:outgoing>GM_Flow_Tier_Standard</bpmn:outgoing>
+      <bpmn:outgoing>GM_Flow_Tier_Default</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Gamification Engine: Award premium badge (Gold/Trophy/Champion) -->
+    <bpmn:serviceTask id="GM_Task_AwardPremiumBadge"
+                      name="Award Premium Badge"
+                      camunda:type="external"
+                      camunda:topic="award-premium-badge">
+      <bpmn:incoming>GM_Flow_Tier_Premium</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_Premium_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Gamification Engine: Award standard badge (Silver/Team/Encouragement) -->
+    <bpmn:serviceTask id="GM_Task_AwardStandardBadge"
+                      name="Award Standard Badge"
+                      camunda:type="external"
+                      camunda:topic="award-standard-badge">
+      <bpmn:incoming>GM_Flow_Tier_Standard</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_Standard_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Gamification Engine: Award participation points (default) -->
+    <bpmn:serviceTask id="GM_Task_AwardParticipation"
+                      name="Award Participation Points"
+                      camunda:type="external"
+                      camunda:topic="award-participation-points">
+      <bpmn:incoming>GM_Flow_Tier_Default</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_Default_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- EXCLUSIVE JOIN: All badge tier branches merge here -->
+    <bpmn:exclusiveGateway id="GM_Join_BadgeTier" name="Badge Awarded">
+      <bpmn:incoming>GM_Flow_Premium_Join</bpmn:incoming>
+      <bpmn:incoming>GM_Flow_Standard_Join</bpmn:incoming>
+      <bpmn:incoming>GM_Flow_Default_Join</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_03</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- INCLUSIVE GATEWAY SPLIT: Update multiple systems simultaneously -->
+    <!-- Points update + Leaderboard update + Analytics update all fire at once -->
+    <bpmn:inclusiveGateway id="GM_Gateway_IncSplit" name="Update All Systems">
+      <bpmn:incoming>GM_Flow_03</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_Inc_Points</bpmn:outgoing>
+      <bpmn:outgoing>GM_Flow_Inc_Leaderboard</bpmn:outgoing>
+      <bpmn:outgoing>GM_Flow_Inc_Analytics</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+
+    <!-- Gamification Engine: Update student points total -->
+    <bpmn:serviceTask id="GM_Task_UpdatePoints"
+                      name="Update Points Balance"
+                      camunda:type="external"
+                      camunda:topic="update-points-balance">
+      <bpmn:incoming>GM_Flow_Inc_Points</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_Points_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Gamification Engine: Refresh the class leaderboard -->
+    <bpmn:serviceTask id="GM_Task_UpdateLeaderboard"
+                      name="Update Leaderboard"
+                      camunda:type="external"
+                      camunda:topic="update-leaderboard">
+      <bpmn:incoming>GM_Flow_Inc_Leaderboard</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_Leaderboard_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Gamification Engine: Update AI analytics for personalization -->
+    <bpmn:serviceTask id="GM_Task_UpdateAnalytics"
+                      name="Update AI Analytics"
+                      camunda:type="external"
+                      camunda:topic="update-gamification-analytics">
+      <bpmn:incoming>GM_Flow_Inc_Analytics</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_Analytics_Join</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- INCLUSIVE JOIN: Wait for all systems to confirm update -->
+    <bpmn:inclusiveGateway id="GM_Gateway_IncJoin" name="All Systems Updated">
+      <bpmn:incoming>GM_Flow_Points_Join</bpmn:incoming>
+      <bpmn:incoming>GM_Flow_Leaderboard_Join</bpmn:incoming>
+      <bpmn:incoming>GM_Flow_Analytics_Join</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_04</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+
+    <!-- EXCLUSIVE GATEWAY: Check if student has hit a milestone -->
+    <bpmn:exclusiveGateway id="GM_Gateway_Milestone" name="Milestone Reached?" default="GM_Flow_NoMilestone">
+      <bpmn:incoming>GM_Flow_04</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_YesMilestone</bpmn:outgoing>
+      <bpmn:outgoing>GM_Flow_NoMilestone</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- Unlock a special achievement (e.g. "100 Points Club", "Week Streak") -->
+    <bpmn:serviceTask id="GM_Task_UnlockAchievement"
+                      name="Unlock Special Achievement"
+                      camunda:type="external"
+                      camunda:topic="unlock-special-achievement">
+      <bpmn:incoming>GM_Flow_YesMilestone</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_Achievement_Email</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Send email notification with badge/points details -->
+    <bpmn:serviceTask id="GM_Task_SendAchievementEmail"
+                      name="Send Achievement Email"
+                      camunda:type="external"
+                      camunda:topic="send-achievement-email">
+      <bpmn:incoming>GM_Flow_Achievement_Email</bpmn:incoming>
+      <bpmn:incoming>GM_Flow_NoMilestone</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_05</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Student views their earned reward in the UI -->
+    <bpmn:userTask id="GM_Task_ViewAchievement" name="View Achievement" camunda:assignee="${studentId}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="rewardViewed" label="Reward acknowledged?" type="boolean" defaultValue="true" />
+          <camunda:formField id="studentReaction" label="React to your reward (optional)" type="enum">
+            <camunda:value id="excited" name="Excited!" />
+            <camunda:value id="motivated" name="Motivated to learn more" />
+            <camunda:value id="neutral" name="Acknowledged" />
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>GM_Flow_05</bpmn:incoming>
+      <bpmn:outgoing>GM_Flow_06</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:endEvent id="GM_End" name="Rewards Applied">
+      <bpmn:incoming>GM_Flow_06</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="GM_Flow_01" sourceRef="GM_Start" targetRef="GM_Task_DetermineReward" />
+    <bpmn:sequenceFlow id="GM_Flow_02" sourceRef="GM_Task_DetermineReward" targetRef="GM_Gateway_RewardTier" />
+
+    <bpmn:sequenceFlow id="GM_Flow_Tier_Premium" name="Gold / Trophy" sourceRef="GM_Gateway_RewardTier" targetRef="GM_Task_AwardPremiumBadge">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${rewardResult.rewardType.contains("Gold") || rewardResult.rewardType.contains("Trophy") || rewardResult.rewardType.contains("Champion") || rewardResult.rewardType.contains("Hidden")}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="GM_Flow_Tier_Standard" name="Silver / Team" sourceRef="GM_Gateway_RewardTier" targetRef="GM_Task_AwardStandardBadge">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${rewardResult.rewardType.contains("Silver") || rewardResult.rewardType.contains("Team") || rewardResult.rewardType.contains("Badge")}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="GM_Flow_Tier_Default" name="Participation" sourceRef="GM_Gateway_RewardTier" targetRef="GM_Task_AwardParticipation" />
+
+    <bpmn:sequenceFlow id="GM_Flow_Premium_Join" sourceRef="GM_Task_AwardPremiumBadge" targetRef="GM_Join_BadgeTier" />
+    <bpmn:sequenceFlow id="GM_Flow_Standard_Join" sourceRef="GM_Task_AwardStandardBadge" targetRef="GM_Join_BadgeTier" />
+    <bpmn:sequenceFlow id="GM_Flow_Default_Join" sourceRef="GM_Task_AwardParticipation" targetRef="GM_Join_BadgeTier" />
+
+    <bpmn:sequenceFlow id="GM_Flow_03" sourceRef="GM_Join_BadgeTier" targetRef="GM_Gateway_IncSplit" />
+
+    <bpmn:sequenceFlow id="GM_Flow_Inc_Points" sourceRef="GM_Gateway_IncSplit" targetRef="GM_Task_UpdatePoints" />
+    <bpmn:sequenceFlow id="GM_Flow_Inc_Leaderboard" sourceRef="GM_Gateway_IncSplit" targetRef="GM_Task_UpdateLeaderboard" />
+    <bpmn:sequenceFlow id="GM_Flow_Inc_Analytics" sourceRef="GM_Gateway_IncSplit" targetRef="GM_Task_UpdateAnalytics" />
+
+    <bpmn:sequenceFlow id="GM_Flow_Points_Join" sourceRef="GM_Task_UpdatePoints" targetRef="GM_Gateway_IncJoin" />
+    <bpmn:sequenceFlow id="GM_Flow_Leaderboard_Join" sourceRef="GM_Task_UpdateLeaderboard" targetRef="GM_Gateway_IncJoin" />
+    <bpmn:sequenceFlow id="GM_Flow_Analytics_Join" sourceRef="GM_Task_UpdateAnalytics" targetRef="GM_Gateway_IncJoin" />
+
+    <bpmn:sequenceFlow id="GM_Flow_04" sourceRef="GM_Gateway_IncJoin" targetRef="GM_Gateway_Milestone" />
+
+    <bpmn:sequenceFlow id="GM_Flow_YesMilestone" name="Yes - milestone!" sourceRef="GM_Gateway_Milestone" targetRef="GM_Task_UnlockAchievement">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${totalPoints >= 100 || weeklyStreak >= 7}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="GM_Flow_NoMilestone" name="No milestone" sourceRef="GM_Gateway_Milestone" targetRef="GM_Task_SendAchievementEmail" />
+    <bpmn:sequenceFlow id="GM_Flow_Achievement_Email" sourceRef="GM_Task_UnlockAchievement" targetRef="GM_Task_SendAchievementEmail" />
+
+    <bpmn:sequenceFlow id="GM_Flow_05" sourceRef="GM_Task_SendAchievementEmail" targetRef="GM_Task_ViewAchievement" />
+    <bpmn:sequenceFlow id="GM_Flow_06" sourceRef="GM_Task_ViewAchievement" targetRef="GM_End" />
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Gamification">
+    <bpmndi:BPMNPlane id="BPMNPlane_Gamification" bpmnElement="Process_Gamification">
+
+      <bpmndi:BPMNShape id="GM_Lane_Student_di" bpmnElement="GM_Lane_Student" isHorizontal="true">
+        <dc:Bounds x="180" y="80" width="1520" height="170" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Lane_LMS_di" bpmnElement="GM_Lane_LMS" isHorizontal="true">
+        <dc:Bounds x="180" y="250" width="1520" height="220" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Lane_Engine_di" bpmnElement="GM_Lane_Engine" isHorizontal="true">
+        <dc:Bounds x="180" y="470" width="1520" height="260" />
+      </bpmndi:BPMNShape>
+
+      <!-- Student Lane -->
+      <bpmndi:BPMNShape id="GM_Start_di" bpmnElement="GM_Start">
+        <dc:Bounds x="242" y="147" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="220" y="190" width="80" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Task_ViewAchievement_di" bpmnElement="GM_Task_ViewAchievement">
+        <dc:Bounds x="1380" y="125" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_End_di" bpmnElement="GM_End">
+        <dc:Bounds x="1562" y="147" width="36" height="36" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1540" y="190" width="80" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- LMS Lane -->
+      <bpmndi:BPMNShape id="GM_Task_DetermineReward_di" bpmnElement="GM_Task_DetermineReward">
+        <dc:Bounds x="310" y="310" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Gateway_RewardTier_di" bpmnElement="GM_Gateway_RewardTier" isMarkerVisible="true">
+        <dc:Bounds x="515" y="335" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="502" y="392" width="76" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Gateway_IncSplit_di" bpmnElement="GM_Gateway_IncSplit" isMarkerVisible="true">
+        <dc:Bounds x="895" y="335" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="870" y="392" width="100" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Gateway_IncJoin_di" bpmnElement="GM_Gateway_IncJoin" isMarkerVisible="true">
+        <dc:Bounds x="1085" y="335" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1055" y="392" width="110" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Gateway_Milestone_di" bpmnElement="GM_Gateway_Milestone" isMarkerVisible="true">
+        <dc:Bounds x="1195" y="335" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1175" y="392" width="90" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Task_UnlockAchievement_di" bpmnElement="GM_Task_UnlockAchievement">
+        <dc:Bounds x="1180" y="270" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Task_SendAchievementEmail_di" bpmnElement="GM_Task_SendAchievementEmail">
+        <dc:Bounds x="1290" y="310" width="120" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- Gamification Engine Lane -->
+      <bpmndi:BPMNShape id="GM_Task_AwardPremiumBadge_di" bpmnElement="GM_Task_AwardPremiumBadge">
+        <dc:Bounds x="600" y="490" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Task_AwardStandardBadge_di" bpmnElement="GM_Task_AwardStandardBadge">
+        <dc:Bounds x="600" y="580" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Task_AwardParticipation_di" bpmnElement="GM_Task_AwardParticipation">
+        <dc:Bounds x="600" y="670" width="120" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Join_BadgeTier_di" bpmnElement="GM_Join_BadgeTier" isMarkerVisible="true">
+        <dc:Bounds x="790" y="580" width="50" height="50" />
+        <bpmndi:BPMNLabel><dc:Bounds x="772" y="637" width="86" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Task_UpdatePoints_di" bpmnElement="GM_Task_UpdatePoints">
+        <dc:Bounds x="965" y="490" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Task_UpdateLeaderboard_di" bpmnElement="GM_Task_UpdateLeaderboard">
+        <dc:Bounds x="965" y="580" width="110" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GM_Task_UpdateAnalytics_di" bpmnElement="GM_Task_UpdateAnalytics">
+        <dc:Bounds x="965" y="670" width="110" height="70" />
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="GM_Flow_01_di" bpmnElement="GM_Flow_01">
+        <di:waypoint x="278" y="165" /><di:waypoint x="310" y="165" /><di:waypoint x="310" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GM_Flow_02_di" bpmnElement="GM_Flow_02">
+        <di:waypoint x="450" y="350" /><di:waypoint x="515" y="360" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="GM_Flow_Tier_Premium_di" bpmnElement="GM_Flow_Tier_Premium">
+        <di:waypoint x="540" y="385" /><di:waypoint x="540" y="525" /><di:waypoint x="600" y="525" />
+        <bpmndi:BPMNLabel><dc:Bounds x="555" y="490" width="70" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GM_Flow_Tier_Standard_di" bpmnElement="GM_Flow_Tier_Standard">
+        <di:waypoint x="540" y="385" /><di:waypoint x="540" y="615" /><di:waypoint x="600" y="615" />
+        <bpmndi:BPMNLabel><dc:Bounds x="555" y="595" width="70" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GM_Flow_Tier_Default_di" bpmnElement="GM_Flow_Tier_Default">
+        <di:waypoint x="540" y="385" /><di:waypoint x="540" y="705" /><di:waypoint x="600" y="705" />
+        <bpmndi:BPMNLabel><dc:Bounds x="555" y="685" width="70" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="GM_Flow_Premium_Join_di" bpmnElement="GM_Flow_Premium_Join">
+        <di:waypoint x="720" y="525" /><di:waypoint x="815" y="525" /><di:waypoint x="815" y="580" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GM_Flow_Standard_Join_di" bpmnElement="GM_Flow_Standard_Join">
+        <di:waypoint x="720" y="615" /><di:waypoint x="790" y="605" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GM_Flow_Default_Join_di" bpmnElement="GM_Flow_Default_Join">
+        <di:waypoint x="720" y="705" /><di:waypoint x="815" y="705" /><di:waypoint x="815" y="630" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="GM_Flow_03_di" bpmnElement="GM_Flow_03">
+        <di:waypoint x="840" y="605" /><di:waypoint x="920" y="605" /><di:waypoint x="920" y="385" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="GM_Flow_Inc_Points_di" bpmnElement="GM_Flow_Inc_Points">
+        <di:waypoint x="920" y="385" /><di:waypoint x="920" y="525" /><di:waypoint x="965" y="525" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GM_Flow_Inc_Leaderboard_di" bpmnElement="GM_Flow_Inc_Leaderboard">
+        <di:waypoint x="920" y="385" /><di:waypoint x="920" y="615" /><di:waypoint x="965" y="615" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GM_Flow_Inc_Analytics_di" bpmnElement="GM_Flow_Inc_Analytics">
+        <di:waypoint x="920" y="385" /><di:waypoint x="920" y="705" /><di:waypoint x="965" y="705" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="GM_Flow_Points_Join_di" bpmnElement="GM_Flow_Points_Join">
+        <di:waypoint x="1075" y="525" /><di:waypoint x="1110" y="525" /><di:waypoint x="1110" y="385" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GM_Flow_Leaderboard_Join_di" bpmnElement="GM_Flow_Leaderboard_Join">
+        <di:waypoint x="1075" y="615" /><di:waypoint x="1110" y="615" /><di:waypoint x="1110" y="385" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GM_Flow_Analytics_Join_di" bpmnElement="GM_Flow_Analytics_Join">
+        <di:waypoint x="1075" y="705" /><di:waypoint x="1110" y="705" /><di:waypoint x="1110" y="385" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="GM_Flow_04_di" bpmnElement="GM_Flow_04">
+        <di:waypoint x="1135" y="360" /><di:waypoint x="1195" y="360" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="GM_Flow_YesMilestone_di" bpmnElement="GM_Flow_YesMilestone">
+        <di:waypoint x="1220" y="335" /><di:waypoint x="1220" y="300" /><di:waypoint x="1180" y="300" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1170" y="308" width="80" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GM_Flow_NoMilestone_di" bpmnElement="GM_Flow_NoMilestone">
+        <di:waypoint x="1245" y="360" /><di:waypoint x="1290" y="360" />
+        <bpmndi:BPMNLabel><dc:Bounds x="1252" y="340" width="75" height="14" /></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GM_Flow_Achievement_Email_di" bpmnElement="GM_Flow_Achievement_Email">
+        <di:waypoint x="1300" y="300" /><di:waypoint x="1350" y="300" /><di:waypoint x="1350" y="310" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="GM_Flow_05_di" bpmnElement="GM_Flow_05">
+        <di:waypoint x="1350" y="310" /><di:waypoint x="1350" y="165" /><di:waypoint x="1380" y="165" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GM_Flow_06_di" bpmnElement="GM_Flow_06">
+        <di:waypoint x="1500" y="165" /><di:waypoint x="1562" y="165" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

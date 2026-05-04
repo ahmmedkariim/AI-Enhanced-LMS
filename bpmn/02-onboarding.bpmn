@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  id="Definitions_Onboarding"
+                  targetNamespace="http://camunda.org/schema/lms"
+                  exporter="Camunda Modeler" exporterVersion="5.21.0">
+
+  <bpmn:process id="Process_StudentOnboarding" name="Student Onboarding" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:laneSet id="LaneSet_OB">
+      <bpmn:lane id="Lane_OB_Student" name="Student">
+        <bpmn:flowNodeRef>Start_OB</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OB_SubmitGoals</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OB_ReviewProfile</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_OB</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_OB_LMS" name="LMS System">
+        <bpmn:flowNodeRef>GW_OB_ParSplit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OB_SendConfirm</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_OB_ParJoin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OB_CreateProfile</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_OB_IncSplit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OB_StudyPlan</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OB_Resources</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OB_TutorAccess</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_OB_IncJoin</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_OB_AI" name="AI Engine">
+        <bpmn:flowNodeRef>Task_OB_AnalyzeStyle</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OB_AssessPersonality</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+
+    <bpmn:startEvent id="Start_OB" name="Student Account Created">
+      <bpmn:outgoing>F_OB_01</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:userTask id="Task_OB_SubmitGoals" name="Submit Learning Goals and Preferences" camunda:assignee="${initiator}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="learningGoals" label="What are your learning goals?" type="string">
+            <camunda:validation><camunda:constraint name="required"/></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="subjectAreas" label="Subject areas of interest" type="string">
+            <camunda:validation><camunda:constraint name="required"/></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="learningStyle" label="Preferred learning style" type="enum">
+            <camunda:value id="Visual" name="Visual"/>
+            <camunda:value id="Auditory" name="Auditory"/>
+            <camunda:value id="Reading" name="Reading/Writing"/>
+            <camunda:value id="Kinesthetic" name="Kinesthetic"/>
+            <camunda:value id="Active" name="Active"/>
+            <camunda:value id="Reflective" name="Reflective"/>
+          </camunda:formField>
+          <camunda:formField id="weeklyHours" label="Study hours available per week" type="long" defaultValue="5"/>
+          <camunda:formField id="experienceLevel" label="Current experience level" type="enum">
+            <camunda:value id="Beginner" name="Beginner"/>
+            <camunda:value id="Intermediate" name="Intermediate"/>
+            <camunda:value id="Advanced" name="Advanced"/>
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>F_OB_01</bpmn:incoming>
+      <bpmn:outgoing>F_OB_02</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- PARALLEL GATEWAY: AI analysis + email confirmation simultaneously -->
+    <bpmn:parallelGateway id="GW_OB_ParSplit" name="Start Profile Analysis">
+      <bpmn:incoming>F_OB_02</bpmn:incoming>
+      <bpmn:outgoing>F_OB_03</bpmn:outgoing>
+      <bpmn:outgoing>F_OB_04</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- LMS branch: send confirmation email -->
+    <bpmn:serviceTask id="Task_OB_SendConfirm" name="Send Confirmation Email" camunda:type="external" camunda:topic="send-confirmation-email">
+      <bpmn:incoming>F_OB_03</bpmn:incoming>
+      <bpmn:outgoing>F_OB_05</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- AI branch: analyze learning style then assess personality -->
+    <bpmn:serviceTask id="Task_OB_AnalyzeStyle" name="Analyze Learning Style" camunda:type="external" camunda:topic="analyze-learning-style">
+      <bpmn:incoming>F_OB_04</bpmn:incoming>
+      <bpmn:outgoing>F_OB_06</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_OB_AssessPersonality" name="Assess Personality Profile" camunda:type="external" camunda:topic="assess-personality">
+      <bpmn:incoming>F_OB_06</bpmn:incoming>
+      <bpmn:outgoing>F_OB_07</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- PARALLEL JOIN: wait for both branches -->
+    <bpmn:parallelGateway id="GW_OB_ParJoin" name="Profile Analysis Complete">
+      <bpmn:incoming>F_OB_05</bpmn:incoming>
+      <bpmn:incoming>F_OB_07</bpmn:incoming>
+      <bpmn:outgoing>F_OB_08</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <bpmn:serviceTask id="Task_OB_CreateProfile" name="Create Student Profile" camunda:type="external" camunda:topic="create-student-profile">
+      <bpmn:incoming>F_OB_08</bpmn:incoming>
+      <bpmn:outgoing>F_OB_09</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- INCLUSIVE GATEWAY: assign multiple learning resources simultaneously -->
+    <bpmn:inclusiveGateway id="GW_OB_IncSplit" name="Assign All Learning Resources">
+      <bpmn:incoming>F_OB_09</bpmn:incoming>
+      <bpmn:outgoing>F_OB_10</bpmn:outgoing>
+      <bpmn:outgoing>F_OB_11</bpmn:outgoing>
+      <bpmn:outgoing>F_OB_12</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+
+    <bpmn:serviceTask id="Task_OB_StudyPlan" name="Assign Personalized Study Plan" camunda:type="external" camunda:topic="assign-study-plan">
+      <bpmn:incoming>F_OB_10</bpmn:incoming>
+      <bpmn:outgoing>F_OB_13</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_OB_Resources" name="Assign Learning Materials" camunda:type="external" camunda:topic="assign-learning-resources">
+      <bpmn:incoming>F_OB_11</bpmn:incoming>
+      <bpmn:outgoing>F_OB_14</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_OB_TutorAccess" name="Activate LLM Tutor Access" camunda:type="external" camunda:topic="assign-llm-tutor">
+      <bpmn:incoming>F_OB_12</bpmn:incoming>
+      <bpmn:outgoing>F_OB_15</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- INCLUSIVE JOIN: all resources assigned -->
+    <bpmn:inclusiveGateway id="GW_OB_IncJoin" name="All Resources Assigned">
+      <bpmn:incoming>F_OB_13</bpmn:incoming>
+      <bpmn:incoming>F_OB_14</bpmn:incoming>
+      <bpmn:incoming>F_OB_15</bpmn:incoming>
+      <bpmn:outgoing>F_OB_16</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+
+    <bpmn:userTask id="Task_OB_ReviewProfile" name="Review Personalized Learning Profile" camunda:assignee="${initiator}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="assignedPath" label="Your Assigned Learning Path" type="string">
+            <camunda:properties><camunda:property id="readonly" value="true"/></camunda:properties>
+          </camunda:formField>
+          <camunda:formField id="recommendedResources" label="Recommended Resources" type="string">
+            <camunda:properties><camunda:property id="readonly" value="true"/></camunda:properties>
+          </camunda:formField>
+          <camunda:formField id="profileApproved" label="I accept this learning profile" type="boolean" defaultValue="true"/>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>F_OB_16</bpmn:incoming>
+      <bpmn:outgoing>F_OB_17</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:endEvent id="End_OB" name="Student Onboarded Successfully">
+      <bpmn:incoming>F_OB_17</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="F_OB_01" sourceRef="Start_OB" targetRef="Task_OB_SubmitGoals"/>
+    <bpmn:sequenceFlow id="F_OB_02" sourceRef="Task_OB_SubmitGoals" targetRef="GW_OB_ParSplit"/>
+    <bpmn:sequenceFlow id="F_OB_03" sourceRef="GW_OB_ParSplit" targetRef="Task_OB_SendConfirm"/>
+    <bpmn:sequenceFlow id="F_OB_04" sourceRef="GW_OB_ParSplit" targetRef="Task_OB_AnalyzeStyle"/>
+    <bpmn:sequenceFlow id="F_OB_05" sourceRef="Task_OB_SendConfirm" targetRef="GW_OB_ParJoin"/>
+    <bpmn:sequenceFlow id="F_OB_06" sourceRef="Task_OB_AnalyzeStyle" targetRef="Task_OB_AssessPersonality"/>
+    <bpmn:sequenceFlow id="F_OB_07" sourceRef="Task_OB_AssessPersonality" targetRef="GW_OB_ParJoin"/>
+    <bpmn:sequenceFlow id="F_OB_08" sourceRef="GW_OB_ParJoin" targetRef="Task_OB_CreateProfile"/>
+    <bpmn:sequenceFlow id="F_OB_09" sourceRef="Task_OB_CreateProfile" targetRef="GW_OB_IncSplit"/>
+    <bpmn:sequenceFlow id="F_OB_10" sourceRef="GW_OB_IncSplit" targetRef="Task_OB_StudyPlan"/>
+    <bpmn:sequenceFlow id="F_OB_11" sourceRef="GW_OB_IncSplit" targetRef="Task_OB_Resources"/>
+    <bpmn:sequenceFlow id="F_OB_12" sourceRef="GW_OB_IncSplit" targetRef="Task_OB_TutorAccess"/>
+    <bpmn:sequenceFlow id="F_OB_13" sourceRef="Task_OB_StudyPlan" targetRef="GW_OB_IncJoin"/>
+    <bpmn:sequenceFlow id="F_OB_14" sourceRef="Task_OB_Resources" targetRef="GW_OB_IncJoin"/>
+    <bpmn:sequenceFlow id="F_OB_15" sourceRef="Task_OB_TutorAccess" targetRef="GW_OB_IncJoin"/>
+    <bpmn:sequenceFlow id="F_OB_16" sourceRef="GW_OB_IncJoin" targetRef="Task_OB_ReviewProfile"/>
+    <bpmn:sequenceFlow id="F_OB_17" sourceRef="Task_OB_ReviewProfile" targetRef="End_OB"/>
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_OB">
+    <bpmndi:BPMNPlane id="BPMNPlane_OB" bpmnElement="Process_StudentOnboarding">
+      <bpmndi:BPMNShape id="Lane_OB_Student_di" bpmnElement="Lane_OB_Student" isHorizontal="true">
+        <dc:Bounds x="180" y="80" width="1580" height="175"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_OB_LMS_di" bpmnElement="Lane_OB_LMS" isHorizontal="true">
+        <dc:Bounds x="180" y="255" width="1580" height="245"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_OB_AI_di" bpmnElement="Lane_OB_AI" isHorizontal="true">
+        <dc:Bounds x="180" y="500" width="1580" height="175"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Student Lane -->
+      <bpmndi:BPMNShape id="Start_OB_di" bpmnElement="Start_OB">
+        <dc:Bounds x="232" y="149" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="210" y="192" width="80" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OB_SubmitGoals_di" bpmnElement="Task_OB_SubmitGoals">
+        <dc:Bounds x="310" y="127" width="130" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OB_ReviewProfile_di" bpmnElement="Task_OB_ReviewProfile">
+        <dc:Bounds x="1530" y="127" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_OB_di" bpmnElement="End_OB">
+        <dc:Bounds x="1712" y="149" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1688" y="192" width="85" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- LMS Lane -->
+      <bpmndi:BPMNShape id="GW_OB_ParSplit_di" bpmnElement="GW_OB_ParSplit">
+        <dc:Bounds x="495" y="332" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="463" y="389" width="115" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OB_SendConfirm_di" bpmnElement="Task_OB_SendConfirm">
+        <dc:Bounds x="600" y="310" width="130" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_OB_ParJoin_di" bpmnElement="GW_OB_ParJoin">
+        <dc:Bounds x="895" y="332" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="860" y="389" width="120" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OB_CreateProfile_di" bpmnElement="Task_OB_CreateProfile">
+        <dc:Bounds x="1000" y="310" width="130" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_OB_IncSplit_di" bpmnElement="GW_OB_IncSplit">
+        <dc:Bounds x="1190" y="332" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1150" y="389" width="130" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OB_StudyPlan_di" bpmnElement="Task_OB_StudyPlan">
+        <dc:Bounds x="1300" y="270" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OB_Resources_di" bpmnElement="Task_OB_Resources">
+        <dc:Bounds x="1300" y="340" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OB_TutorAccess_di" bpmnElement="Task_OB_TutorAccess">
+        <dc:Bounds x="1300" y="410" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_OB_IncJoin_di" bpmnElement="GW_OB_IncJoin">
+        <dc:Bounds x="1490" y="332" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1455" y="389" width="120" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- AI Lane -->
+      <bpmndi:BPMNShape id="Task_OB_AnalyzeStyle_di" bpmnElement="Task_OB_AnalyzeStyle">
+        <dc:Bounds x="600" y="545" width="130" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_OB_AssessPersonality_di" bpmnElement="Task_OB_AssessPersonality">
+        <dc:Bounds x="790" y="545" width="130" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="F_OB_01_di" bpmnElement="F_OB_01">
+        <di:waypoint x="268" y="167"/><di:waypoint x="310" y="167"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_02_di" bpmnElement="F_OB_02">
+        <di:waypoint x="375" y="207"/><di:waypoint x="375" y="357"/><di:waypoint x="495" y="357"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_03_di" bpmnElement="F_OB_03">
+        <di:waypoint x="545" y="357"/><di:waypoint x="600" y="357"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_04_di" bpmnElement="F_OB_04">
+        <di:waypoint x="520" y="382"/><di:waypoint x="520" y="585"/><di:waypoint x="600" y="585"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_05_di" bpmnElement="F_OB_05">
+        <di:waypoint x="730" y="357"/><di:waypoint x="895" y="357"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_06_di" bpmnElement="F_OB_06">
+        <di:waypoint x="730" y="585"/><di:waypoint x="790" y="585"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_07_di" bpmnElement="F_OB_07">
+        <di:waypoint x="855" y="585"/><di:waypoint x="920" y="585"/><di:waypoint x="920" y="382"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_08_di" bpmnElement="F_OB_08">
+        <di:waypoint x="945" y="357"/><di:waypoint x="1000" y="357"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_09_di" bpmnElement="F_OB_09">
+        <di:waypoint x="1130" y="357"/><di:waypoint x="1190" y="357"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_10_di" bpmnElement="F_OB_10">
+        <di:waypoint x="1215" y="332"/><di:waypoint x="1215" y="305"/><di:waypoint x="1300" y="305"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_11_di" bpmnElement="F_OB_11">
+        <di:waypoint x="1240" y="357"/><di:waypoint x="1300" y="357"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_12_di" bpmnElement="F_OB_12">
+        <di:waypoint x="1215" y="382"/><di:waypoint x="1215" y="445"/><di:waypoint x="1300" y="445"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_13_di" bpmnElement="F_OB_13">
+        <di:waypoint x="1430" y="305"/><di:waypoint x="1515" y="305"/><di:waypoint x="1515" y="332"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_14_di" bpmnElement="F_OB_14">
+        <di:waypoint x="1430" y="357"/><di:waypoint x="1490" y="357"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_15_di" bpmnElement="F_OB_15">
+        <di:waypoint x="1430" y="445"/><di:waypoint x="1515" y="445"/><di:waypoint x="1515" y="382"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_16_di" bpmnElement="F_OB_16">
+        <di:waypoint x="1515" y="332"/><di:waypoint x="1515" y="167"/><di:waypoint x="1530" y="167"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_OB_17_di" bpmnElement="F_OB_17">
+        <di:waypoint x="1670" y="167"/><di:waypoint x="1712" y="167"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

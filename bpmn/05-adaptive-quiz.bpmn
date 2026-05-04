@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  id="Definitions_AdaptiveQuiz"
+                  targetNamespace="http://camunda.org/schema/lms"
+                  exporter="Camunda Modeler" exporterVersion="5.21.0">
+
+  <bpmn:process id="Process_AdaptiveQuiz" name="Adaptive Quiz Generation" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:laneSet id="LaneSet_AQ">
+      <bpmn:lane id="Lane_AQ_Student" name="Student">
+        <bpmn:flowNodeRef>Start_AQ</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AQ_TakeQuiz</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_AQ_Pass</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_AQ_Remedial</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_AQ_LMS" name="LMS System">
+        <bpmn:flowNodeRef>Task_AQ_DeterminesDifficulty</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AQ_ParSplit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AQ_CreateSession</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AQ_NotifyStudent</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AQ_ParJoin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AQ_PassFail</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AQ_UpdateProgress</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AQ_SendResults</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_AQ_AI" name="AI Engine">
+        <bpmn:flowNodeRef>Task_AQ_GetHistory</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AQ_GradeResponses</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AQ_AnalyzePerformance</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_AQ_LLM" name="LLM Tutor">
+        <bpmn:flowNodeRef>Task_AQ_GenerateQuiz</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AQ_GeneratePositiveFeedback</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AQ_GenerateRemedialExplanation</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+
+    <bpmn:startEvent id="Start_AQ" name="Quiz Requested">
+      <bpmn:outgoing>F_AQ_01</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- AI: Get student history -->
+    <bpmn:serviceTask id="Task_AQ_GetHistory" name="Retrieve Student Quiz History" camunda:type="external" camunda:topic="get-student-quiz-history">
+      <bpmn:incoming>F_AQ_01</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_02</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- LMS: Determine difficulty via DMN 4 -->
+    <bpmn:businessRuleTask id="Task_AQ_DeterminesDifficulty" name="Determine Quiz Difficulty (DMN 4)" camunda:decisionRef="QuizDifficultyDecision" camunda:resultVariable="difficultyResult" camunda:mapDecisionResult="singleResult">
+      <bpmn:incoming>F_AQ_02</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_03</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- LLM: Generate adaptive quiz questions -->
+    <bpmn:serviceTask id="Task_AQ_GenerateQuiz" name="Generate Adaptive Quiz Questions" camunda:type="external" camunda:topic="generate-adaptive-quiz">
+      <bpmn:incoming>F_AQ_03</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_04</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- PARALLEL GATEWAY: Create session + notify student simultaneously -->
+    <bpmn:parallelGateway id="GW_AQ_ParSplit" name="Prepare Quiz Environment">
+      <bpmn:incoming>F_AQ_04</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_05</bpmn:outgoing>
+      <bpmn:outgoing>F_AQ_06</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <bpmn:serviceTask id="Task_AQ_CreateSession" name="Create Quiz Session" camunda:type="external" camunda:topic="create-quiz-session">
+      <bpmn:incoming>F_AQ_05</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_07</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_AQ_NotifyStudent" name="Notify Student via Email" camunda:type="external" camunda:topic="notify-student-quiz-ready">
+      <bpmn:incoming>F_AQ_06</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_08</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- PARALLEL JOIN -->
+    <bpmn:parallelGateway id="GW_AQ_ParJoin" name="Quiz Ready">
+      <bpmn:incoming>F_AQ_07</bpmn:incoming>
+      <bpmn:incoming>F_AQ_08</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_09</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- Student takes the quiz -->
+    <bpmn:userTask id="Task_AQ_TakeQuiz" name="Take Adaptive Quiz" camunda:assignee="${initiator}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="nextDifficulty" label="Quiz Difficulty" type="string">
+            <camunda:properties><camunda:property id="readonly" value="true"/></camunda:properties>
+          </camunda:formField>
+          <camunda:formField id="questionCount" label="Number of Questions" type="long">
+            <camunda:properties><camunda:property id="readonly" value="true"/></camunda:properties>
+          </camunda:formField>
+          <camunda:formField id="q1Answer" label="Question 1 Answer" type="string"/>
+          <camunda:formField id="q2Answer" label="Question 2 Answer" type="string"/>
+          <camunda:formField id="q3Answer" label="Question 3 Answer" type="string"/>
+          <camunda:formField id="q4Answer" label="Question 4 Answer" type="string"/>
+          <camunda:formField id="q5Answer" label="Question 5 Answer" type="string"/>
+          <camunda:formField id="timeSpentSeconds" label="Time spent (auto-recorded)" type="long" defaultValue="300"/>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>F_AQ_09</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_10</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- AI: Grade quiz responses -->
+    <bpmn:serviceTask id="Task_AQ_GradeResponses" name="Grade Quiz Responses" camunda:type="external" camunda:topic="grade-quiz-responses">
+      <bpmn:incoming>F_AQ_10</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_11</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- AI: Analyze performance -->
+    <bpmn:serviceTask id="Task_AQ_AnalyzePerformance" name="Analyze Quiz Performance" camunda:type="external" camunda:topic="analyze-quiz-performance">
+      <bpmn:incoming>F_AQ_11</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_12</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- EXCLUSIVE GATEWAY: Pass or fail? -->
+    <bpmn:exclusiveGateway id="GW_AQ_PassFail" name="Score >= 60%?" default="F_AQ_Fail">
+      <bpmn:incoming>F_AQ_12</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_Pass</bpmn:outgoing>
+      <bpmn:outgoing>F_AQ_Fail</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- LLM: Generate positive feedback for passing -->
+    <bpmn:serviceTask id="Task_AQ_GeneratePositiveFeedback" name="Generate Positive Feedback" camunda:type="external" camunda:topic="generate-positive-feedback">
+      <bpmn:incoming>F_AQ_Pass</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_13</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- LLM: Generate remedial explanation for failing -->
+    <bpmn:serviceTask id="Task_AQ_GenerateRemedialExplanation" name="Generate Remedial Explanation" camunda:type="external" camunda:topic="generate-remedial-explanation">
+      <bpmn:incoming>F_AQ_Fail</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_14</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- LMS: Update progress record -->
+    <bpmn:serviceTask id="Task_AQ_UpdateProgress" name="Update Student Progress Record" camunda:type="external" camunda:topic="update-student-progress">
+      <bpmn:incoming>F_AQ_13</bpmn:incoming>
+      <bpmn:incoming>F_AQ_14</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_15</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- LMS: Send quiz results email -->
+    <bpmn:serviceTask id="Task_AQ_SendResults" name="Send Quiz Results Email" camunda:type="external" camunda:topic="send-quiz-results-email">
+      <bpmn:incoming>F_AQ_15</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_16</bpmn:outgoing>
+      <bpmn:outgoing>F_AQ_17</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="End_AQ_Pass" name="Quiz Complete - Passed">
+      <bpmn:incoming>F_AQ_16</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:endEvent id="End_AQ_Remedial" name="Quiz Complete - Remedial Assigned">
+      <bpmn:incoming>F_AQ_17</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="F_AQ_01" sourceRef="Start_AQ" targetRef="Task_AQ_GetHistory"/>
+    <bpmn:sequenceFlow id="F_AQ_02" sourceRef="Task_AQ_GetHistory" targetRef="Task_AQ_DeterminesDifficulty"/>
+    <bpmn:sequenceFlow id="F_AQ_03" sourceRef="Task_AQ_DeterminesDifficulty" targetRef="Task_AQ_GenerateQuiz"/>
+    <bpmn:sequenceFlow id="F_AQ_04" sourceRef="Task_AQ_GenerateQuiz" targetRef="GW_AQ_ParSplit"/>
+    <bpmn:sequenceFlow id="F_AQ_05" sourceRef="GW_AQ_ParSplit" targetRef="Task_AQ_CreateSession"/>
+    <bpmn:sequenceFlow id="F_AQ_06" sourceRef="GW_AQ_ParSplit" targetRef="Task_AQ_NotifyStudent"/>
+    <bpmn:sequenceFlow id="F_AQ_07" sourceRef="Task_AQ_CreateSession" targetRef="GW_AQ_ParJoin"/>
+    <bpmn:sequenceFlow id="F_AQ_08" sourceRef="Task_AQ_NotifyStudent" targetRef="GW_AQ_ParJoin"/>
+    <bpmn:sequenceFlow id="F_AQ_09" sourceRef="GW_AQ_ParJoin" targetRef="Task_AQ_TakeQuiz"/>
+    <bpmn:sequenceFlow id="F_AQ_10" sourceRef="Task_AQ_TakeQuiz" targetRef="Task_AQ_GradeResponses"/>
+    <bpmn:sequenceFlow id="F_AQ_11" sourceRef="Task_AQ_GradeResponses" targetRef="Task_AQ_AnalyzePerformance"/>
+    <bpmn:sequenceFlow id="F_AQ_12" sourceRef="Task_AQ_AnalyzePerformance" targetRef="GW_AQ_PassFail"/>
+    <bpmn:sequenceFlow id="F_AQ_Pass" name="Pass (>=60%)" sourceRef="GW_AQ_PassFail" targetRef="Task_AQ_GeneratePositiveFeedback">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${quizScore >= 60}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="F_AQ_Fail" name="Fail (&lt;60%)" sourceRef="GW_AQ_PassFail" targetRef="Task_AQ_GenerateRemedialExplanation"/>
+    <bpmn:sequenceFlow id="F_AQ_13" sourceRef="Task_AQ_GeneratePositiveFeedback" targetRef="Task_AQ_UpdateProgress"/>
+    <bpmn:sequenceFlow id="F_AQ_14" sourceRef="Task_AQ_GenerateRemedialExplanation" targetRef="Task_AQ_UpdateProgress"/>
+    <bpmn:sequenceFlow id="F_AQ_15" sourceRef="Task_AQ_UpdateProgress" targetRef="Task_AQ_SendResults"/>
+    <bpmn:sequenceFlow id="F_AQ_16" name="Pass path" sourceRef="Task_AQ_SendResults" targetRef="End_AQ_Pass">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${quizScore >= 60}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="F_AQ_17" name="Remedial path" sourceRef="Task_AQ_SendResults" targetRef="End_AQ_Remedial">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${quizScore &lt; 60}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_AQ">
+    <bpmndi:BPMNPlane id="BPMNPlane_AQ" bpmnElement="Process_AdaptiveQuiz">
+      <bpmndi:BPMNShape id="Lane_AQ_Student_di" bpmnElement="Lane_AQ_Student" isHorizontal="true">
+        <dc:Bounds x="180" y="80" width="1660" height="165"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_AQ_LMS_di" bpmnElement="Lane_AQ_LMS" isHorizontal="true">
+        <dc:Bounds x="180" y="245" width="1660" height="200"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_AQ_AI_di" bpmnElement="Lane_AQ_AI" isHorizontal="true">
+        <dc:Bounds x="180" y="445" width="1660" height="175"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_AQ_LLM_di" bpmnElement="Lane_AQ_LLM" isHorizontal="true">
+        <dc:Bounds x="180" y="620" width="1660" height="175"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Student Lane -->
+      <bpmndi:BPMNShape id="Start_AQ_di" bpmnElement="Start_AQ">
+        <dc:Bounds x="232" y="145" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="212" y="188" width="76" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AQ_TakeQuiz_di" bpmnElement="Task_AQ_TakeQuiz">
+        <dc:Bounds x="890" y="122" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_AQ_Pass_di" bpmnElement="End_AQ_Pass">
+        <dc:Bounds x="1572" y="122" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1548" y="165" width="84" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_AQ_Remedial_di" bpmnElement="End_AQ_Remedial">
+        <dc:Bounds x="1572" y="192" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1540" y="235" width="100" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- LMS Lane -->
+      <bpmndi:BPMNShape id="Task_AQ_DeterminesDifficulty_di" bpmnElement="Task_AQ_DeterminesDifficulty">
+        <dc:Bounds x="370" y="300" width="150" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_AQ_ParSplit_di" bpmnElement="GW_AQ_ParSplit">
+        <dc:Bounds x="685" y="320" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AQ_CreateSession_di" bpmnElement="Task_AQ_CreateSession">
+        <dc:Bounds x="770" y="280" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AQ_NotifyStudent_di" bpmnElement="Task_AQ_NotifyStudent">
+        <dc:Bounds x="770" y="360" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_AQ_ParJoin_di" bpmnElement="GW_AQ_ParJoin">
+        <dc:Bounds x="940" y="320" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_AQ_PassFail_di" bpmnElement="GW_AQ_PassFail" isMarkerVisible="true">
+        <dc:Bounds x="1170" y="320" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1155" y="377" width="80" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AQ_UpdateProgress_di" bpmnElement="Task_AQ_UpdateProgress">
+        <dc:Bounds x="1360" y="300" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AQ_SendResults_di" bpmnElement="Task_AQ_SendResults">
+        <dc:Bounds x="1490" y="300" width="130" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- AI Lane -->
+      <bpmndi:BPMNShape id="Task_AQ_GetHistory_di" bpmnElement="Task_AQ_GetHistory">
+        <dc:Bounds x="220" y="490" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AQ_GradeResponses_di" bpmnElement="Task_AQ_GradeResponses">
+        <dc:Bounds x="1040" y="490" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AQ_AnalyzePerformance_di" bpmnElement="Task_AQ_AnalyzePerformance">
+        <dc:Bounds x="1090" y="490" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- LLM Lane -->
+      <bpmndi:BPMNShape id="Task_AQ_GenerateQuiz_di" bpmnElement="Task_AQ_GenerateQuiz">
+        <dc:Bounds x="570" y="660" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AQ_GeneratePositiveFeedback_di" bpmnElement="Task_AQ_GeneratePositiveFeedback">
+        <dc:Bounds x="1240" y="640" width="130" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AQ_GenerateRemedialExplanation_di" bpmnElement="Task_AQ_GenerateRemedialExplanation">
+        <dc:Bounds x="1240" y="730" width="130" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="F_AQ_01_di" bpmnElement="F_AQ_01">
+        <di:waypoint x="250" y="181"/><di:waypoint x="250" y="530"/><di:waypoint x="220" y="530"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_02_di" bpmnElement="F_AQ_02">
+        <di:waypoint x="290" y="530"/><di:waypoint x="350" y="530"/><di:waypoint x="350" y="340"/><di:waypoint x="370" y="340"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_03_di" bpmnElement="F_AQ_03">
+        <di:waypoint x="520" y="340"/><di:waypoint x="640" y="340"/><di:waypoint x="640" y="700"/><di:waypoint x="570" y="700"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_04_di" bpmnElement="F_AQ_04">
+        <di:waypoint x="640" y="700"/><di:waypoint x="710" y="700"/><di:waypoint x="710" y="370"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_05_di" bpmnElement="F_AQ_05">
+        <di:waypoint x="710" y="320"/><di:waypoint x="710" y="315"/><di:waypoint x="770" y="315"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_06_di" bpmnElement="F_AQ_06">
+        <di:waypoint x="710" y="370"/><di:waypoint x="710" y="395"/><di:waypoint x="770" y="395"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_07_di" bpmnElement="F_AQ_07">
+        <di:waypoint x="900" y="315"/><di:waypoint x="965" y="315"/><di:waypoint x="965" y="320"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_08_di" bpmnElement="F_AQ_08">
+        <di:waypoint x="900" y="395"/><di:waypoint x="965" y="395"/><di:waypoint x="965" y="370"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_09_di" bpmnElement="F_AQ_09">
+        <di:waypoint x="965" y="320"/><di:waypoint x="965" y="162"/><di:waypoint x="890" y="162"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_10_di" bpmnElement="F_AQ_10">
+        <di:waypoint x="1030" y="162"/><di:waypoint x="1110" y="162"/><di:waypoint x="1110" y="530"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_11_di" bpmnElement="F_AQ_11">
+        <di:waypoint x="1180" y="530"/><di:waypoint x="1220" y="530"/><di:waypoint x="1220" y="490"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_12_di" bpmnElement="F_AQ_12">
+        <di:waypoint x="1160" y="490"/><di:waypoint x="1195" y="490"/><di:waypoint x="1195" y="370"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_Pass_di" bpmnElement="F_AQ_Pass">
+        <di:waypoint x="1195" y="320"/><di:waypoint x="1195" y="680"/><di:waypoint x="1240" y="680"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1200" y="500" width="72" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_Fail_di" bpmnElement="F_AQ_Fail">
+        <di:waypoint x="1220" y="345"/><di:waypoint x="1220" y="770"/><di:waypoint x="1240" y="770"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1225" y="556" width="60" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_13_di" bpmnElement="F_AQ_13">
+        <di:waypoint x="1370" y="680"/><di:waypoint x="1430" y="680"/><di:waypoint x="1430" y="380"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_14_di" bpmnElement="F_AQ_14">
+        <di:waypoint x="1370" y="770"/><di:waypoint x="1430" y="770"/><di:waypoint x="1430" y="380"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_15_di" bpmnElement="F_AQ_15">
+        <di:waypoint x="1500" y="340"/><di:waypoint x="1490" y="340"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_16_di" bpmnElement="F_AQ_16">
+        <di:waypoint x="1555" y="315"/><di:waypoint x="1590" y="315"/><di:waypoint x="1590" y="158"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1560" y="238" width="60" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AQ_17_di" bpmnElement="F_AQ_17">
+        <di:waypoint x="1555" y="365"/><di:waypoint x="1590" y="365"/><di:waypoint x="1590" y="228"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1560" y="296" width="72" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  id="Definitions_AdaptiveLearning"
+                  targetNamespace="http://camunda.org/schema/lms"
+                  exporter="Camunda Modeler" exporterVersion="5.21.0">
+
+  <bpmn:message id="Msg_ActivityCompleted" name="ActivityCompletedMessage"/>
+
+  <bpmn:process id="Process_AdaptiveLearning" name="Adaptive Learning Process" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:laneSet id="LaneSet_AL">
+      <bpmn:lane id="Lane_AL_Student" name="Student">
+        <bpmn:flowNodeRef>Start_AL</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AL_AccessMaterials</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_AL_Session</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_AL_LMS" name="LMS System">
+        <bpmn:flowNodeRef>Task_AL_DeterminePathDMN</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AL_ParSplit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AL_ParJoin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AL_IncSplit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AL_AssignPrimary</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AL_AssignPractice</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AL_AssignSupplementary</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AL_IncJoin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AL_EventBased</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Catch_AL_Timeout</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Catch_AL_Completed</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AL_AfterEvent</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AL_AdjustDifficultyDMN</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AL_Continue</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_AL_AI" name="AI Engine">
+        <bpmn:flowNodeRef>Task_AL_GetPerformance</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AL_AnalyzeEngagement</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AL_TrackProgress</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_AL_LLM" name="LLM Tutor">
+        <bpmn:flowNodeRef>Task_AL_GenerateContent</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+
+    <bpmn:startEvent id="Start_AL" name="Learning Session Started">
+      <bpmn:outgoing>F_AL_01</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <!-- AI: Retrieve student performance data -->
+    <bpmn:serviceTask id="Task_AL_GetPerformance" name="Retrieve Student Performance Data" camunda:type="external" camunda:topic="get-student-performance">
+      <bpmn:incoming>F_AL_01</bpmn:incoming>
+      <bpmn:incoming>F_AL_Loop</bpmn:incoming>
+      <bpmn:outgoing>F_AL_02</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- LMS: Determine learning path via DMN 1 -->
+    <bpmn:businessRuleTask id="Task_AL_DeterminePathDMN" name="Determine Learning Path (DMN 1)" camunda:decisionRef="LearningPathDecision" camunda:resultVariable="learningPathResult" camunda:mapDecisionResult="singleResult">
+      <bpmn:incoming>F_AL_02</bpmn:incoming>
+      <bpmn:outgoing>F_AL_03</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- PARALLEL GATEWAY: Generate content + Analyze engagement simultaneously -->
+    <bpmn:parallelGateway id="GW_AL_ParSplit" name="AI and LLM Work in Parallel">
+      <bpmn:incoming>F_AL_03</bpmn:incoming>
+      <bpmn:outgoing>F_AL_04</bpmn:outgoing>
+      <bpmn:outgoing>F_AL_05</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- LLM: Generate personalized content -->
+    <bpmn:serviceTask id="Task_AL_GenerateContent" name="Generate Personalized Content" camunda:type="external" camunda:topic="generate-personalized-content">
+      <bpmn:incoming>F_AL_04</bpmn:incoming>
+      <bpmn:outgoing>F_AL_06</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- AI: Analyze engagement level -->
+    <bpmn:serviceTask id="Task_AL_AnalyzeEngagement" name="Analyze Student Engagement Level" camunda:type="external" camunda:topic="analyze-engagement">
+      <bpmn:incoming>F_AL_05</bpmn:incoming>
+      <bpmn:outgoing>F_AL_07</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- PARALLEL JOIN -->
+    <bpmn:parallelGateway id="GW_AL_ParJoin" name="Content Ready">
+      <bpmn:incoming>F_AL_06</bpmn:incoming>
+      <bpmn:incoming>F_AL_07</bpmn:incoming>
+      <bpmn:outgoing>F_AL_08</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- INCLUSIVE GATEWAY: Assign multiple resource types simultaneously -->
+    <bpmn:inclusiveGateway id="GW_AL_IncSplit" name="Assign Multiple Resources">
+      <bpmn:incoming>F_AL_08</bpmn:incoming>
+      <bpmn:outgoing>F_AL_09</bpmn:outgoing>
+      <bpmn:outgoing>F_AL_10</bpmn:outgoing>
+      <bpmn:outgoing>F_AL_11</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+
+    <bpmn:serviceTask id="Task_AL_AssignPrimary" name="Assign Primary Content" camunda:type="external" camunda:topic="assign-primary-content">
+      <bpmn:incoming>F_AL_09</bpmn:incoming>
+      <bpmn:outgoing>F_AL_12</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_AL_AssignPractice" name="Assign Practice Exercises" camunda:type="external" camunda:topic="assign-practice-exercises">
+      <bpmn:incoming>F_AL_10</bpmn:incoming>
+      <bpmn:outgoing>F_AL_13</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_AL_AssignSupplementary" name="Assign Supplementary Materials" camunda:type="external" camunda:topic="assign-supplementary-materials">
+      <bpmn:incoming>F_AL_11</bpmn:incoming>
+      <bpmn:outgoing>F_AL_14</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- INCLUSIVE JOIN -->
+    <bpmn:inclusiveGateway id="GW_AL_IncJoin" name="Resources Ready">
+      <bpmn:incoming>F_AL_12</bpmn:incoming>
+      <bpmn:incoming>F_AL_13</bpmn:incoming>
+      <bpmn:incoming>F_AL_14</bpmn:incoming>
+      <bpmn:outgoing>F_AL_15</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+
+    <!-- Student accesses learning materials -->
+    <bpmn:userTask id="Task_AL_AccessMaterials" name="Access Learning Materials" camunda:assignee="${initiator}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="nextLearningPath" label="Your Learning Path" type="string">
+            <camunda:properties><camunda:property id="readonly" value="true"/></camunda:properties>
+          </camunda:formField>
+          <camunda:formField id="activityCompleted" label="Have you completed this activity?" type="boolean" defaultValue="false"/>
+          <camunda:formField id="activityType" label="Activity Type" type="enum">
+            <camunda:value id="Quiz" name="Quiz"/>
+            <camunda:value id="Reading" name="Reading"/>
+            <camunda:value id="Video" name="Video"/>
+            <camunda:value id="Exercise" name="Exercise"/>
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>F_AL_15</bpmn:incoming>
+      <bpmn:outgoing>F_AL_16</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- EVENT-BASED GATEWAY: wait for activity completion OR timeout -->
+    <bpmn:eventBasedGateway id="GW_AL_EventBased" name="Wait for Response or Timeout">
+      <bpmn:incoming>F_AL_16</bpmn:incoming>
+      <bpmn:outgoing>F_AL_17</bpmn:outgoing>
+      <bpmn:outgoing>F_AL_18</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+
+    <!-- Catch A: Student completes activity (message) -->
+    <bpmn:intermediateCatchEvent id="Catch_AL_Completed" name="Activity Completed">
+      <bpmn:incoming>F_AL_17</bpmn:incoming>
+      <bpmn:outgoing>F_AL_19</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_AL" messageRef="Msg_ActivityCompleted"/>
+    </bpmn:intermediateCatchEvent>
+
+    <!-- Catch B: 30 minute timeout -->
+    <bpmn:intermediateCatchEvent id="Catch_AL_Timeout" name="30 Min Session Timeout">
+      <bpmn:incoming>F_AL_18</bpmn:incoming>
+      <bpmn:outgoing>F_AL_20</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerDef_AL">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT30M</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+
+    <!-- Merge after event-based gateway paths -->
+    <bpmn:exclusiveGateway id="GW_AL_AfterEvent" name="Continue Processing">
+      <bpmn:incoming>F_AL_19</bpmn:incoming>
+      <bpmn:incoming>F_AL_20</bpmn:incoming>
+      <bpmn:outgoing>F_AL_21</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- AI: Track learning progress -->
+    <bpmn:serviceTask id="Task_AL_TrackProgress" name="Track Learning Progress" camunda:type="external" camunda:topic="track-learning-progress">
+      <bpmn:incoming>F_AL_21</bpmn:incoming>
+      <bpmn:outgoing>F_AL_22</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- LMS: Adjust quiz difficulty via DMN 4 -->
+    <bpmn:businessRuleTask id="Task_AL_AdjustDifficultyDMN" name="Adjust Quiz Difficulty (DMN 4)" camunda:decisionRef="QuizDifficultyDecision" camunda:resultVariable="difficultyResult" camunda:mapDecisionResult="singleResult">
+      <bpmn:incoming>F_AL_22</bpmn:incoming>
+      <bpmn:outgoing>F_AL_23</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <!-- EXCLUSIVE GATEWAY: Continue learning? -->
+    <bpmn:exclusiveGateway id="GW_AL_Continue" name="Continue Learning?" default="F_AL_End">
+      <bpmn:incoming>F_AL_23</bpmn:incoming>
+      <bpmn:outgoing>F_AL_Loop</bpmn:outgoing>
+      <bpmn:outgoing>F_AL_End</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:endEvent id="End_AL_Session" name="Learning Session Complete">
+      <bpmn:incoming>F_AL_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="F_AL_01" sourceRef="Start_AL" targetRef="Task_AL_GetPerformance"/>
+    <bpmn:sequenceFlow id="F_AL_02" sourceRef="Task_AL_GetPerformance" targetRef="Task_AL_DeterminePathDMN"/>
+    <bpmn:sequenceFlow id="F_AL_03" sourceRef="Task_AL_DeterminePathDMN" targetRef="GW_AL_ParSplit"/>
+    <bpmn:sequenceFlow id="F_AL_04" sourceRef="GW_AL_ParSplit" targetRef="Task_AL_GenerateContent"/>
+    <bpmn:sequenceFlow id="F_AL_05" sourceRef="GW_AL_ParSplit" targetRef="Task_AL_AnalyzeEngagement"/>
+    <bpmn:sequenceFlow id="F_AL_06" sourceRef="Task_AL_GenerateContent" targetRef="GW_AL_ParJoin"/>
+    <bpmn:sequenceFlow id="F_AL_07" sourceRef="Task_AL_AnalyzeEngagement" targetRef="GW_AL_ParJoin"/>
+    <bpmn:sequenceFlow id="F_AL_08" sourceRef="GW_AL_ParJoin" targetRef="GW_AL_IncSplit"/>
+    <bpmn:sequenceFlow id="F_AL_09" sourceRef="GW_AL_IncSplit" targetRef="Task_AL_AssignPrimary"/>
+    <bpmn:sequenceFlow id="F_AL_10" sourceRef="GW_AL_IncSplit" targetRef="Task_AL_AssignPractice"/>
+    <bpmn:sequenceFlow id="F_AL_11" sourceRef="GW_AL_IncSplit" targetRef="Task_AL_AssignSupplementary"/>
+    <bpmn:sequenceFlow id="F_AL_12" sourceRef="Task_AL_AssignPrimary" targetRef="GW_AL_IncJoin"/>
+    <bpmn:sequenceFlow id="F_AL_13" sourceRef="Task_AL_AssignPractice" targetRef="GW_AL_IncJoin"/>
+    <bpmn:sequenceFlow id="F_AL_14" sourceRef="Task_AL_AssignSupplementary" targetRef="GW_AL_IncJoin"/>
+    <bpmn:sequenceFlow id="F_AL_15" sourceRef="GW_AL_IncJoin" targetRef="Task_AL_AccessMaterials"/>
+    <bpmn:sequenceFlow id="F_AL_16" sourceRef="Task_AL_AccessMaterials" targetRef="GW_AL_EventBased"/>
+    <bpmn:sequenceFlow id="F_AL_17" sourceRef="GW_AL_EventBased" targetRef="Catch_AL_Completed"/>
+    <bpmn:sequenceFlow id="F_AL_18" sourceRef="GW_AL_EventBased" targetRef="Catch_AL_Timeout"/>
+    <bpmn:sequenceFlow id="F_AL_19" sourceRef="Catch_AL_Completed" targetRef="GW_AL_AfterEvent"/>
+    <bpmn:sequenceFlow id="F_AL_20" sourceRef="Catch_AL_Timeout" targetRef="GW_AL_AfterEvent"/>
+    <bpmn:sequenceFlow id="F_AL_21" sourceRef="GW_AL_AfterEvent" targetRef="Task_AL_TrackProgress"/>
+    <bpmn:sequenceFlow id="F_AL_22" sourceRef="Task_AL_TrackProgress" targetRef="Task_AL_AdjustDifficultyDMN"/>
+    <bpmn:sequenceFlow id="F_AL_23" sourceRef="Task_AL_AdjustDifficultyDMN" targetRef="GW_AL_Continue"/>
+    <bpmn:sequenceFlow id="F_AL_Loop" name="Yes - Continue" sourceRef="GW_AL_Continue" targetRef="Task_AL_GetPerformance">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${continueSession == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="F_AL_End" name="No - End Session" sourceRef="GW_AL_Continue" targetRef="End_AL_Session"/>
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_AL">
+    <bpmndi:BPMNPlane id="BPMNPlane_AL" bpmnElement="Process_AdaptiveLearning">
+      <bpmndi:BPMNShape id="Lane_AL_Student_di" bpmnElement="Lane_AL_Student" isHorizontal="true">
+        <dc:Bounds x="180" y="80" width="1720" height="165"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_AL_LMS_di" bpmnElement="Lane_AL_LMS" isHorizontal="true">
+        <dc:Bounds x="180" y="245" width="1720" height="230"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_AL_AI_di" bpmnElement="Lane_AL_AI" isHorizontal="true">
+        <dc:Bounds x="180" y="475" width="1720" height="170"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_AL_LLM_di" bpmnElement="Lane_AL_LLM" isHorizontal="true">
+        <dc:Bounds x="180" y="645" width="1720" height="155"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Student Lane -->
+      <bpmndi:BPMNShape id="Start_AL_di" bpmnElement="Start_AL">
+        <dc:Bounds x="232" y="145" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="208" y="188" width="85" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AL_AccessMaterials_di" bpmnElement="Task_AL_AccessMaterials">
+        <dc:Bounds x="1070" y="122" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_AL_Session_di" bpmnElement="End_AL_Session">
+        <dc:Bounds x="1712" y="145" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1685" y="188" width="90" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- LMS Lane -->
+      <bpmndi:BPMNShape id="Task_AL_DeterminePathDMN_di" bpmnElement="Task_AL_DeterminePathDMN">
+        <dc:Bounds x="360" y="310" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_AL_ParSplit_di" bpmnElement="GW_AL_ParSplit">
+        <dc:Bounds x="555" y="330" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_AL_ParJoin_di" bpmnElement="GW_AL_ParJoin">
+        <dc:Bounds x="770" y="330" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_AL_IncSplit_di" bpmnElement="GW_AL_IncSplit">
+        <dc:Bounds x="875" y="330" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AL_AssignPrimary_di" bpmnElement="Task_AL_AssignPrimary">
+        <dc:Bounds x="975" y="265" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AL_AssignPractice_di" bpmnElement="Task_AL_AssignPractice">
+        <dc:Bounds x="975" y="340" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AL_AssignSupplementary_di" bpmnElement="Task_AL_AssignSupplementary">
+        <dc:Bounds x="975" y="415" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_AL_IncJoin_di" bpmnElement="GW_AL_IncJoin">
+        <dc:Bounds x="1160" y="330" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_AL_EventBased_di" bpmnElement="GW_AL_EventBased">
+        <dc:Bounds x="1280" y="330" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1245" y="387" width="120" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Catch_AL_Completed_di" bpmnElement="Catch_AL_Completed">
+        <dc:Bounds x="1382" y="295" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1358" y="338" width="84" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Catch_AL_Timeout_di" bpmnElement="Catch_AL_Timeout">
+        <dc:Bounds x="1382" y="377" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1358" y="420" width="85" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_AL_AfterEvent_di" bpmnElement="GW_AL_AfterEvent">
+        <dc:Bounds x="1480" y="330" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AL_AdjustDifficultyDMN_di" bpmnElement="Task_AL_AdjustDifficultyDMN">
+        <dc:Bounds x="1580" y="310" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_AL_Continue_di" bpmnElement="GW_AL_Continue" isMarkerVisible="true">
+        <dc:Bounds x="1692" y="330" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1670" y="387" width="95" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- AI Lane -->
+      <bpmndi:BPMNShape id="Task_AL_GetPerformance_di" bpmnElement="Task_AL_GetPerformance">
+        <dc:Bounds x="220" y="520" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AL_AnalyzeEngagement_di" bpmnElement="Task_AL_AnalyzeEngagement">
+        <dc:Bounds x="600" y="520" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_AL_TrackProgress_di" bpmnElement="Task_AL_TrackProgress">
+        <dc:Bounds x="1470" y="520" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- LLM Lane -->
+      <bpmndi:BPMNShape id="Task_AL_GenerateContent_di" bpmnElement="Task_AL_GenerateContent">
+        <dc:Bounds x="600" y="685" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="F_AL_01_di" bpmnElement="F_AL_01">
+        <di:waypoint x="250" y="181"/><di:waypoint x="250" y="560"/><di:waypoint x="220" y="560"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_02_di" bpmnElement="F_AL_02">
+        <di:waypoint x="290" y="560"/><di:waypoint x="340" y="560"/><di:waypoint x="340" y="350"/><di:waypoint x="360" y="350"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_03_di" bpmnElement="F_AL_03">
+        <di:waypoint x="500" y="350"/><di:waypoint x="555" y="355"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_04_di" bpmnElement="F_AL_04">
+        <di:waypoint x="580" y="380"/><di:waypoint x="580" y="725"/><di:waypoint x="600" y="725"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_05_di" bpmnElement="F_AL_05">
+        <di:waypoint x="580" y="380"/><di:waypoint x="580" y="560"/><di:waypoint x="600" y="560"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_06_di" bpmnElement="F_AL_06">
+        <di:waypoint x="740" y="725"/><di:waypoint x="795" y="725"/><di:waypoint x="795" y="380"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_07_di" bpmnElement="F_AL_07">
+        <di:waypoint x="740" y="560"/><di:waypoint x="795" y="560"/><di:waypoint x="795" y="380"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_08_di" bpmnElement="F_AL_08">
+        <di:waypoint x="820" y="355"/><di:waypoint x="875" y="355"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_09_di" bpmnElement="F_AL_09">
+        <di:waypoint x="900" y="330"/><di:waypoint x="900" y="300"/><di:waypoint x="975" y="300"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_10_di" bpmnElement="F_AL_10">
+        <di:waypoint x="925" y="355"/><di:waypoint x="975" y="375"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_11_di" bpmnElement="F_AL_11">
+        <di:waypoint x="900" y="380"/><di:waypoint x="900" y="450"/><di:waypoint x="975" y="450"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_12_di" bpmnElement="F_AL_12">
+        <di:waypoint x="1105" y="300"/><di:waypoint x="1185" y="300"/><di:waypoint x="1185" y="330"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_13_di" bpmnElement="F_AL_13">
+        <di:waypoint x="1105" y="375"/><di:waypoint x="1160" y="355"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_14_di" bpmnElement="F_AL_14">
+        <di:waypoint x="1105" y="450"/><di:waypoint x="1185" y="450"/><di:waypoint x="1185" y="380"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_15_di" bpmnElement="F_AL_15">
+        <di:waypoint x="1185" y="330"/><di:waypoint x="1185" y="162"/><di:waypoint x="1070" y="162"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_16_di" bpmnElement="F_AL_16">
+        <di:waypoint x="1210" y="162"/><di:waypoint x="1305" y="162"/><di:waypoint x="1305" y="330"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_17_di" bpmnElement="F_AL_17">
+        <di:waypoint x="1305" y="330"/><di:waypoint x="1305" y="313"/><di:waypoint x="1382" y="313"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_18_di" bpmnElement="F_AL_18">
+        <di:waypoint x="1305" y="380"/><di:waypoint x="1305" y="395"/><di:waypoint x="1382" y="395"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_19_di" bpmnElement="F_AL_19">
+        <di:waypoint x="1418" y="313"/><di:waypoint x="1505" y="313"/><di:waypoint x="1505" y="330"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_20_di" bpmnElement="F_AL_20">
+        <di:waypoint x="1418" y="395"/><di:waypoint x="1505" y="395"/><di:waypoint x="1505" y="380"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_21_di" bpmnElement="F_AL_21">
+        <di:waypoint x="1505" y="380"/><di:waypoint x="1505" y="560"/><di:waypoint x="1470" y="560"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_22_di" bpmnElement="F_AL_22">
+        <di:waypoint x="1540" y="560"/><di:waypoint x="1650" y="560"/><di:waypoint x="1650" y="390"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_23_di" bpmnElement="F_AL_23">
+        <di:waypoint x="1720" y="350"/><di:waypoint x="1692" y="355"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_Loop_di" bpmnElement="F_AL_Loop">
+        <di:waypoint x="1717" y="330"/><di:waypoint x="1717" y="60"/><di:waypoint x="250" y="60"/><di:waypoint x="250" y="520"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="900" y="42" width="90" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_AL_End_di" bpmnElement="F_AL_End">
+        <di:waypoint x="1742" y="355"/><di:waypoint x="1730" y="355"/><di:waypoint x="1730" y="163"/><di:waypoint x="1712" y="163"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1735" y="248" width="80" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

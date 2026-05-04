@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:camunda="http://camunda.org/schema/1.0/dmn" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" id="role_assignment_definitions" name="Role Assignment Decision" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.45.0">
-  <decision id="RoleAssignmentDecision" name="Role Assignment Decision" camunda:historyTimeToLive="10">
+  <decision id="RoleAssignmentDecision" name="Role Assignment Decision">
     <decisionTable id="DecisionTable_RoleAssignment" hitPolicy="FIRST">
       <input id="input_userType" label="User Type" camunda:inputVariable="userType">
         <inputExpression id="inputExpression_userType" typeRef="string">
@@ -262,29 +262,6 @@
         </outputEntry>
         <outputEntry id="rule_r10_out_4">
           <text>true</text>
-        </outputEntry>
-      </rule>
-      <rule id="DecisionRule_09edr1r">
-        <inputEntry id="UnaryTests_1390zvf">
-          <text></text>
-        </inputEntry>
-        <inputEntry id="UnaryTests_0k7ob7c">
-          <text></text>
-        </inputEntry>
-        <inputEntry id="UnaryTests_1c8v19t">
-          <text></text>
-        </inputEntry>
-        <outputEntry id="LiteralExpression_0svocz5">
-          <text></text>
-        </outputEntry>
-        <outputEntry id="LiteralExpression_091sbbm">
-          <text></text>
-        </outputEntry>
-        <outputEntry id="LiteralExpression_0fx2qz9">
-          <text></text>
-        </outputEntry>
-        <outputEntry id="LiteralExpression_0y5wdoi">
-          <text></text>
         </outputEntry>
       </rule>
     </decisionTable>

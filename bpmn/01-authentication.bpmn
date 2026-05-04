@@ -35,7 +35,7 @@
     <!-- ============================================ -->
     <!-- USER LANE: Login interaction                  -->
     <!-- ============================================ -->
-    <bpmn:startEvent id="StartEvent_LoginRequest" name="Login Request" camunda:initiator="initiator">
+    <bpmn:startEvent id="StartEvent_LoginRequest" name="Login Request">
       <bpmn:outgoing>Flow_Start_to_EnterCreds</bpmn:outgoing>
     </bpmn:startEvent>
 

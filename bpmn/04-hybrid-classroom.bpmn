@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  id="Definitions_HybridClassroom"
+                  targetNamespace="http://camunda.org/schema/lms"
+                  exporter="Camunda Modeler" exporterVersion="5.21.0">
+
+  <bpmn:message id="Msg_QuizAnswer" name="QuizAnswerMessage"/>
+
+  <bpmn:process id="Process_HybridClassroom" name="Hybrid Classroom Process" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:laneSet id="LaneSet_HC">
+      <bpmn:lane id="Lane_HC_Student" name="Student">
+        <bpmn:flowNodeRef>Start_HC</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HC_Poll</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HC_TeamChallenge</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Catch_HC_QuizAnswer</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HC_PostLectureQuiz</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_HC_Complete</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_HC_Denied</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_HC_Instructor" name="Instructor">
+        <bpmn:flowNodeRef>Task_HC_StartLecture</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_HC_LMS" name="LMS System">
+        <bpmn:flowNodeRef>GW_HC_PrepSplit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HC_PrepareMaterials</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_HC_PrepJoin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_HC_EventBased</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Catch_HC_Timeout</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_HC_AfterQuiz</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_HC_RewardSplit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HC_AwardPoints</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HC_SendFeedback</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HC_UpdateLeaderboard</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_HC_RewardJoin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_HC_PassFail</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HC_AwardBadge</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HC_Remedial</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_HC_AI" name="AI Engine">
+        <bpmn:flowNodeRef>Task_HC_AnalyzeClass</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HC_GenerateSummary</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_HC_LLM" name="LLM Tutor">
+        <bpmn:flowNodeRef>Task_HC_GenerateInClassQuiz</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HC_GeneratePostQuiz</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+
+    <!-- ===== BEFORE LECTURE ===== -->
+    <bpmn:startEvent id="Start_HC" name="Lecture Scheduled">
+      <bpmn:outgoing>F_HC_01</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:userTask id="Task_HC_StartLecture" name="Start Lecture Session" camunda:candidateGroups="instructor">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="lectureTitle" label="Lecture Title" type="string">
+            <camunda:validation><camunda:constraint name="required"/></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="lectureTopics" label="Topics to Cover" type="string">
+            <camunda:validation><camunda:constraint name="required"/></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="estimatedDuration" label="Estimated Duration (minutes)" type="long" defaultValue="60"/>
+          <camunda:formField id="classroomMode" label="Classroom Mode" type="enum">
+            <camunda:value id="Hybrid" name="Hybrid (Physical + Online)"/>
+            <camunda:value id="Online" name="Fully Online"/>
+            <camunda:value id="Physical" name="Fully Physical"/>
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>F_HC_01</bpmn:incoming>
+      <bpmn:outgoing>F_HC_02</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- PARALLEL GATEWAY: Analyze class + Prepare materials + Generate quiz simultaneously -->
+    <bpmn:parallelGateway id="GW_HC_PrepSplit" name="Prepare Lecture">
+      <bpmn:incoming>F_HC_02</bpmn:incoming>
+      <bpmn:outgoing>F_HC_03</bpmn:outgoing>
+      <bpmn:outgoing>F_HC_04</bpmn:outgoing>
+      <bpmn:outgoing>F_HC_05</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <bpmn:serviceTask id="Task_HC_AnalyzeClass" name="Analyze Class Profile" camunda:type="external" camunda:topic="analyze-class-profile">
+      <bpmn:incoming>F_HC_03</bpmn:incoming>
+      <bpmn:outgoing>F_HC_06</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_HC_PrepareMaterials" name="Prepare Adaptive Lecture Materials" camunda:type="external" camunda:topic="prepare-lecture-materials">
+      <bpmn:incoming>F_HC_04</bpmn:incoming>
+      <bpmn:outgoing>F_HC_07</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_HC_GenerateInClassQuiz" name="Generate In-Class Quiz" camunda:type="external" camunda:topic="generate-inclass-quiz">
+      <bpmn:incoming>F_HC_05</bpmn:incoming>
+      <bpmn:outgoing>F_HC_08</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- PARALLEL JOIN -->
+    <bpmn:parallelGateway id="GW_HC_PrepJoin" name="Lecture Ready to Begin">
+      <bpmn:incoming>F_HC_06</bpmn:incoming>
+      <bpmn:incoming>F_HC_07</bpmn:incoming>
+      <bpmn:incoming>F_HC_08</bpmn:incoming>
+      <bpmn:outgoing>F_HC_09</bpmn:outgoing>
+    </bpmn:parallelGateway>
+
+    <!-- ===== DURING LECTURE ===== -->
+    <bpmn:userTask id="Task_HC_Poll" name="Participate in Live Poll" camunda:assignee="${initiator}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="pollQuestion" label="Poll Question" type="string">
+            <camunda:properties><camunda:property id="readonly" value="true"/></camunda:properties>
+          </camunda:formField>
+          <camunda:formField id="pollAnswer" label="Your Answer" type="enum">
+            <camunda:value id="A" name="Option A"/>
+            <camunda:value id="B" name="Option B"/>
+            <camunda:value id="C" name="Option C"/>
+            <camunda:value id="D" name="Option D"/>
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>F_HC_09</bpmn:incoming>
+      <bpmn:outgoing>F_HC_10</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_HC_TeamChallenge" name="Join Team Challenge" camunda:assignee="${initiator}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="teamName" label="Team Name" type="string"/>
+          <camunda:formField id="challengeResponse" label="Team Challenge Response" type="string">
+            <camunda:validation><camunda:constraint name="required"/></camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="collaborationLevel" label="Collaboration Level" type="enum">
+            <camunda:value id="High" name="High"/>
+            <camunda:value id="Medium" name="Medium"/>
+            <camunda:value id="Low" name="Low"/>
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>F_HC_10</bpmn:incoming>
+      <bpmn:outgoing>F_HC_11</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- EVENT-BASED GATEWAY: Wait for quiz answer OR 2-minute timeout -->
+    <bpmn:eventBasedGateway id="GW_HC_EventBased" name="Wait: Answer or Timeout">
+      <bpmn:incoming>F_HC_11</bpmn:incoming>
+      <bpmn:outgoing>F_HC_12</bpmn:outgoing>
+      <bpmn:outgoing>F_HC_13</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+
+    <!-- Student answers live quiz (message catch) -->
+    <bpmn:intermediateCatchEvent id="Catch_HC_QuizAnswer" name="Student Answered Live Quiz">
+      <bpmn:incoming>F_HC_12</bpmn:incoming>
+      <bpmn:outgoing>F_HC_14</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_HC" messageRef="Msg_QuizAnswer"/>
+    </bpmn:intermediateCatchEvent>
+
+    <!-- 2-minute timeout (student didn't respond) -->
+    <bpmn:intermediateCatchEvent id="Catch_HC_Timeout" name="2 Min Quiz Timeout">
+      <bpmn:incoming>F_HC_13</bpmn:incoming>
+      <bpmn:outgoing>F_HC_15</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerDef_HC">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT2M</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+
+    <!-- Merge after event-based gateway -->
+    <bpmn:exclusiveGateway id="GW_HC_AfterQuiz" name="Quiz Processed">
+      <bpmn:incoming>F_HC_14</bpmn:incoming>
+      <bpmn:incoming>F_HC_15</bpmn:incoming>
+      <bpmn:outgoing>F_HC_16</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <!-- INCLUSIVE GATEWAY: reward points + send feedback + update leaderboard simultaneously -->
+    <bpmn:inclusiveGateway id="GW_HC_RewardSplit" name="Trigger Rewards and Feedback">
+      <bpmn:incoming>F_HC_16</bpmn:incoming>
+      <bpmn:outgoing>F_HC_17</bpmn:outgoing>
+      <bpmn:outgoing>F_HC_18</bpmn:outgoing>
+      <bpmn:outgoing>F_HC_19</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+
+    <bpmn:serviceTask id="Task_HC_AwardPoints" name="Award Participation Points" camunda:type="external" camunda:topic="award-points">
+      <bpmn:incoming>F_HC_17</bpmn:incoming>
+      <bpmn:outgoing>F_HC_20</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_HC_SendFeedback" name="Send Real-Time Feedback" camunda:type="external" camunda:topic="send-realtime-feedback">
+      <bpmn:incoming>F_HC_18</bpmn:incoming>
+      <bpmn:outgoing>F_HC_21</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_HC_UpdateLeaderboard" name="Update Class Leaderboard" camunda:type="external" camunda:topic="update-leaderboard">
+      <bpmn:incoming>F_HC_19</bpmn:incoming>
+      <bpmn:outgoing>F_HC_22</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- INCLUSIVE JOIN -->
+    <bpmn:inclusiveGateway id="GW_HC_RewardJoin" name="All Rewards Delivered">
+      <bpmn:incoming>F_HC_20</bpmn:incoming>
+      <bpmn:incoming>F_HC_21</bpmn:incoming>
+      <bpmn:incoming>F_HC_22</bpmn:incoming>
+      <bpmn:outgoing>F_HC_23</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+
+    <!-- ===== AFTER LECTURE ===== -->
+    <bpmn:serviceTask id="Task_HC_GenerateSummary" name="Generate AI Lecture Summary" camunda:type="external" camunda:topic="generate-lecture-summary">
+      <bpmn:incoming>F_HC_23</bpmn:incoming>
+      <bpmn:outgoing>F_HC_24</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_HC_GeneratePostQuiz" name="Generate Adaptive Post-Lecture Quiz" camunda:type="external" camunda:topic="generate-post-lecture-quiz">
+      <bpmn:incoming>F_HC_24</bpmn:incoming>
+      <bpmn:outgoing>F_HC_25</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:userTask id="Task_HC_PostLectureQuiz" name="Complete Post-Lecture Quiz" camunda:assignee="${initiator}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="quizScore" label="Quiz Score (0-100)" type="long"/>
+          <camunda:formField id="quizScoreLevel" label="Score Level" type="enum">
+            <camunda:value id="High" name="High (>=70)"/>
+            <camunda:value id="Medium" name="Medium (40-69)"/>
+            <camunda:value id="Low" name="Low (below 40)"/>
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>F_HC_25</bpmn:incoming>
+      <bpmn:outgoing>F_HC_26</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- EXCLUSIVE GATEWAY: Pass or Fail the post-lecture quiz -->
+    <bpmn:exclusiveGateway id="GW_HC_PassFail" name="Quiz Passed?" default="F_HC_Fail">
+      <bpmn:incoming>F_HC_26</bpmn:incoming>
+      <bpmn:outgoing>F_HC_Pass</bpmn:outgoing>
+      <bpmn:outgoing>F_HC_Fail</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Task_HC_AwardBadge" name="Award Lecture Completion Badge" camunda:type="external" camunda:topic="award-completion-badge">
+      <bpmn:incoming>F_HC_Pass</bpmn:incoming>
+      <bpmn:outgoing>F_HC_27</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_HC_Remedial" name="Assign Remedial Content" camunda:type="external" camunda:topic="assign-remedial-content">
+      <bpmn:incoming>F_HC_Fail</bpmn:incoming>
+      <bpmn:outgoing>F_HC_28</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="End_HC_Complete" name="Lecture Complete - Passed">
+      <bpmn:incoming>F_HC_27</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:endEvent id="End_HC_Denied" name="Lecture Complete - Remedial Assigned">
+      <bpmn:incoming>F_HC_28</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- SEQUENCE FLOWS -->
+    <bpmn:sequenceFlow id="F_HC_01" sourceRef="Start_HC" targetRef="Task_HC_StartLecture"/>
+    <bpmn:sequenceFlow id="F_HC_02" sourceRef="Task_HC_StartLecture" targetRef="GW_HC_PrepSplit"/>
+    <bpmn:sequenceFlow id="F_HC_03" sourceRef="GW_HC_PrepSplit" targetRef="Task_HC_AnalyzeClass"/>
+    <bpmn:sequenceFlow id="F_HC_04" sourceRef="GW_HC_PrepSplit" targetRef="Task_HC_PrepareMaterials"/>
+    <bpmn:sequenceFlow id="F_HC_05" sourceRef="GW_HC_PrepSplit" targetRef="Task_HC_GenerateInClassQuiz"/>
+    <bpmn:sequenceFlow id="F_HC_06" sourceRef="Task_HC_AnalyzeClass" targetRef="GW_HC_PrepJoin"/>
+    <bpmn:sequenceFlow id="F_HC_07" sourceRef="Task_HC_PrepareMaterials" targetRef="GW_HC_PrepJoin"/>
+    <bpmn:sequenceFlow id="F_HC_08" sourceRef="Task_HC_GenerateInClassQuiz" targetRef="GW_HC_PrepJoin"/>
+    <bpmn:sequenceFlow id="F_HC_09" sourceRef="GW_HC_PrepJoin" targetRef="Task_HC_Poll"/>
+    <bpmn:sequenceFlow id="F_HC_10" sourceRef="Task_HC_Poll" targetRef="Task_HC_TeamChallenge"/>
+    <bpmn:sequenceFlow id="F_HC_11" sourceRef="Task_HC_TeamChallenge" targetRef="GW_HC_EventBased"/>
+    <bpmn:sequenceFlow id="F_HC_12" sourceRef="GW_HC_EventBased" targetRef="Catch_HC_QuizAnswer"/>
+    <bpmn:sequenceFlow id="F_HC_13" sourceRef="GW_HC_EventBased" targetRef="Catch_HC_Timeout"/>
+    <bpmn:sequenceFlow id="F_HC_14" sourceRef="Catch_HC_QuizAnswer" targetRef="GW_HC_AfterQuiz"/>
+    <bpmn:sequenceFlow id="F_HC_15" sourceRef="Catch_HC_Timeout" targetRef="GW_HC_AfterQuiz"/>
+    <bpmn:sequenceFlow id="F_HC_16" sourceRef="GW_HC_AfterQuiz" targetRef="GW_HC_RewardSplit"/>
+    <bpmn:sequenceFlow id="F_HC_17" sourceRef="GW_HC_RewardSplit" targetRef="Task_HC_AwardPoints"/>
+    <bpmn:sequenceFlow id="F_HC_18" sourceRef="GW_HC_RewardSplit" targetRef="Task_HC_SendFeedback"/>
+    <bpmn:sequenceFlow id="F_HC_19" sourceRef="GW_HC_RewardSplit" targetRef="Task_HC_UpdateLeaderboard"/>
+    <bpmn:sequenceFlow id="F_HC_20" sourceRef="Task_HC_AwardPoints" targetRef="GW_HC_RewardJoin"/>
+    <bpmn:sequenceFlow id="F_HC_21" sourceRef="Task_HC_SendFeedback" targetRef="GW_HC_RewardJoin"/>
+    <bpmn:sequenceFlow id="F_HC_22" sourceRef="Task_HC_UpdateLeaderboard" targetRef="GW_HC_RewardJoin"/>
+    <bpmn:sequenceFlow id="F_HC_23" sourceRef="GW_HC_RewardJoin" targetRef="Task_HC_GenerateSummary"/>
+    <bpmn:sequenceFlow id="F_HC_24" sourceRef="Task_HC_GenerateSummary" targetRef="Task_HC_GeneratePostQuiz"/>
+    <bpmn:sequenceFlow id="F_HC_25" sourceRef="Task_HC_GeneratePostQuiz" targetRef="Task_HC_PostLectureQuiz"/>
+    <bpmn:sequenceFlow id="F_HC_26" sourceRef="Task_HC_PostLectureQuiz" targetRef="GW_HC_PassFail"/>
+    <bpmn:sequenceFlow id="F_HC_Pass" name="Yes (>=70)" sourceRef="GW_HC_PassFail" targetRef="Task_HC_AwardBadge">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${quizScore >= 70}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="F_HC_Fail" name="No (&lt;70)" sourceRef="GW_HC_PassFail" targetRef="Task_HC_Remedial"/>
+    <bpmn:sequenceFlow id="F_HC_27" sourceRef="Task_HC_AwardBadge" targetRef="End_HC_Complete"/>
+    <bpmn:sequenceFlow id="F_HC_28" sourceRef="Task_HC_Remedial" targetRef="End_HC_Denied"/>
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_HC">
+    <bpmndi:BPMNPlane id="BPMNPlane_HC" bpmnElement="Process_HybridClassroom">
+      <bpmndi:BPMNShape id="Lane_HC_Student_di" bpmnElement="Lane_HC_Student" isHorizontal="true">
+        <dc:Bounds x="180" y="80" width="1780" height="165"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_HC_Instructor_di" bpmnElement="Lane_HC_Instructor" isHorizontal="true">
+        <dc:Bounds x="180" y="245" width="1780" height="150"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_HC_LMS_di" bpmnElement="Lane_HC_LMS" isHorizontal="true">
+        <dc:Bounds x="180" y="395" width="1780" height="245"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_HC_AI_di" bpmnElement="Lane_HC_AI" isHorizontal="true">
+        <dc:Bounds x="180" y="640" width="1780" height="155"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_HC_LLM_di" bpmnElement="Lane_HC_LLM" isHorizontal="true">
+        <dc:Bounds x="180" y="795" width="1780" height="155"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Student Lane -->
+      <bpmndi:BPMNShape id="Start_HC_di" bpmnElement="Start_HC">
+        <dc:Bounds x="232" y="145" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="207" y="188" width="86" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HC_Poll_di" bpmnElement="Task_HC_Poll">
+        <dc:Bounds x="720" y="122" width="130" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HC_TeamChallenge_di" bpmnElement="Task_HC_TeamChallenge">
+        <dc:Bounds x="900" y="122" width="130" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Catch_HC_QuizAnswer_di" bpmnElement="Catch_HC_QuizAnswer">
+        <dc:Bounds x="1110" y="108" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1088" y="151" width="80" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HC_PostLectureQuiz_di" bpmnElement="Task_HC_PostLectureQuiz">
+        <dc:Bounds x="1500" y="122" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_HC_Complete_di" bpmnElement="End_HC_Complete">
+        <dc:Bounds x="1712" y="108" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1688" y="151" width="84" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_HC_Denied_di" bpmnElement="End_HC_Denied">
+        <dc:Bounds x="1712" y="178" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1688" y="221" width="84" height="40"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Instructor Lane -->
+      <bpmndi:BPMNShape id="Task_HC_StartLecture_di" bpmnElement="Task_HC_StartLecture">
+        <dc:Bounds x="300" y="275" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- LMS Lane -->
+      <bpmndi:BPMNShape id="GW_HC_PrepSplit_di" bpmnElement="GW_HC_PrepSplit">
+        <dc:Bounds x="495" y="492" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="464" y="549" width="112" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HC_PrepareMaterials_di" bpmnElement="Task_HC_PrepareMaterials">
+        <dc:Bounds x="580" y="470" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_HC_PrepJoin_di" bpmnElement="GW_HC_PrepJoin">
+        <dc:Bounds x="680" y="492" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_HC_EventBased_di" bpmnElement="GW_HC_EventBased">
+        <dc:Bounds x="1045" y="492" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1015" y="549" width="110" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Catch_HC_Timeout_di" bpmnElement="Catch_HC_Timeout">
+        <dc:Bounds x="1110" y="502" width="36" height="36"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1090" y="545" width="76" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_HC_AfterQuiz_di" bpmnElement="GW_HC_AfterQuiz">
+        <dc:Bounds x="1200" y="492" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_HC_RewardSplit_di" bpmnElement="GW_HC_RewardSplit">
+        <dc:Bounds x="1310" y="492" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1272" y="549" width="126" height="27"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HC_AwardPoints_di" bpmnElement="Task_HC_AwardPoints">
+        <dc:Bounds x="1400" y="400" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HC_SendFeedback_di" bpmnElement="Task_HC_SendFeedback">
+        <dc:Bounds x="1400" y="480" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HC_UpdateLeaderboard_di" bpmnElement="Task_HC_UpdateLeaderboard">
+        <dc:Bounds x="1400" y="560" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_HC_RewardJoin_di" bpmnElement="GW_HC_RewardJoin">
+        <dc:Bounds x="1580" y="492" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GW_HC_PassFail_di" bpmnElement="GW_HC_PassFail" isMarkerVisible="true">
+        <dc:Bounds x="1670" y="492" width="50" height="50"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1659" y="549" width="72" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HC_AwardBadge_di" bpmnElement="Task_HC_AwardBadge">
+        <dc:Bounds x="1760" y="400" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HC_Remedial_di" bpmnElement="Task_HC_Remedial">
+        <dc:Bounds x="1760" y="490" width="130" height="70"/>
+      </bpmndi:BPMNShape>
+
+      <!-- AI Lane -->
+      <bpmndi:BPMNShape id="Task_HC_AnalyzeClass_di" bpmnElement="Task_HC_AnalyzeClass">
+        <dc:Bounds x="580" y="675" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HC_GenerateSummary_di" bpmnElement="Task_HC_GenerateSummary">
+        <dc:Bounds x="1580" y="675" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- LLM Lane -->
+      <bpmndi:BPMNShape id="Task_HC_GenerateInClassQuiz_di" bpmnElement="Task_HC_GenerateInClassQuiz">
+        <dc:Bounds x="580" y="830" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_HC_GeneratePostQuiz_di" bpmnElement="Task_HC_GeneratePostQuiz">
+        <dc:Bounds x="1350" y="830" width="140" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <!-- Edges -->
+      <bpmndi:BPMNEdge id="F_HC_01_di" bpmnElement="F_HC_01">
+        <di:waypoint x="268" y="163"/><di:waypoint x="300" y="163"/><di:waypoint x="300" y="315"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_02_di" bpmnElement="F_HC_02">
+        <di:waypoint x="440" y="315"/><di:waypoint x="520" y="315"/><di:waypoint x="520" y="492"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_03_di" bpmnElement="F_HC_03">
+        <di:waypoint x="520" y="542"/><di:waypoint x="520" y="715"/><di:waypoint x="580" y="715"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_04_di" bpmnElement="F_HC_04">
+        <di:waypoint x="545" y="517"/><di:waypoint x="580" y="517"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_05_di" bpmnElement="F_HC_05">
+        <di:waypoint x="520" y="542"/><di:waypoint x="520" y="870"/><di:waypoint x="580" y="870"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_06_di" bpmnElement="F_HC_06">
+        <di:waypoint x="650" y="715"/><di:waypoint x="705" y="715"/><di:waypoint x="705" y="542"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_07_di" bpmnElement="F_HC_07">
+        <di:waypoint x="720" y="517"/><di:waypoint x="680" y="517"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_08_di" bpmnElement="F_HC_08">
+        <di:waypoint x="650" y="870"/><di:waypoint x="705" y="870"/><di:waypoint x="705" y="542"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_09_di" bpmnElement="F_HC_09">
+        <di:waypoint x="705" y="492"/><di:waypoint x="705" y="162"/><di:waypoint x="720" y="162"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_10_di" bpmnElement="F_HC_10">
+        <di:waypoint x="850" y="162"/><di:waypoint x="900" y="162"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_11_di" bpmnElement="F_HC_11">
+        <di:waypoint x="965" y="162"/><di:waypoint x="1070" y="162"/><di:waypoint x="1070" y="492"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_12_di" bpmnElement="F_HC_12">
+        <di:waypoint x="1070" y="492"/><di:waypoint x="1070" y="126"/><di:waypoint x="1110" y="126"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_13_di" bpmnElement="F_HC_13">
+        <di:waypoint x="1095" y="517"/><di:waypoint x="1110" y="520"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_14_di" bpmnElement="F_HC_14">
+        <di:waypoint x="1146" y="126"/><di:waypoint x="1225" y="126"/><di:waypoint x="1225" y="492"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_15_di" bpmnElement="F_HC_15">
+        <di:waypoint x="1146" y="520"/><di:waypoint x="1200" y="517"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_16_di" bpmnElement="F_HC_16">
+        <di:waypoint x="1250" y="517"/><di:waypoint x="1310" y="517"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_17_di" bpmnElement="F_HC_17">
+        <di:waypoint x="1335" y="492"/><di:waypoint x="1335" y="435"/><di:waypoint x="1400" y="435"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_18_di" bpmnElement="F_HC_18">
+        <di:waypoint x="1360" y="517"/><di:waypoint x="1400" y="517"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_19_di" bpmnElement="F_HC_19">
+        <di:waypoint x="1335" y="542"/><di:waypoint x="1335" y="595"/><di:waypoint x="1400" y="595"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_20_di" bpmnElement="F_HC_20">
+        <di:waypoint x="1530" y="435"/><di:waypoint x="1605" y="435"/><di:waypoint x="1605" y="492"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_21_di" bpmnElement="F_HC_21">
+        <di:waypoint x="1530" y="515"/><di:waypoint x="1580" y="517"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_22_di" bpmnElement="F_HC_22">
+        <di:waypoint x="1530" y="595"/><di:waypoint x="1605" y="595"/><di:waypoint x="1605" y="542"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_23_di" bpmnElement="F_HC_23">
+        <di:waypoint x="1605" y="492"/><di:waypoint x="1605" y="715"/><di:waypoint x="1580" y="715"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_24_di" bpmnElement="F_HC_24">
+        <di:waypoint x="1650" y="715"/><di:waypoint x="1420" y="715"/><di:waypoint x="1420" y="870"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_25_di" bpmnElement="F_HC_25">
+        <di:waypoint x="1420" y="830"/><di:waypoint x="1420" y="162"/><di:waypoint x="1500" y="162"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_26_di" bpmnElement="F_HC_26">
+        <di:waypoint x="1640" y="162"/><di:waypoint x="1695" y="162"/><di:waypoint x="1695" y="492"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_Pass_di" bpmnElement="F_HC_Pass">
+        <di:waypoint x="1695" y="492"/><di:waypoint x="1695" y="435"/><di:waypoint x="1760" y="435"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1710" y="415" width="68" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_Fail_di" bpmnElement="F_HC_Fail">
+        <di:waypoint x="1720" y="517"/><di:waypoint x="1760" y="525"/>
+        <bpmndi:BPMNLabel><dc:Bounds x="1725" y="500" width="50" height="14"/></bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_27_di" bpmnElement="F_HC_27">
+        <di:waypoint x="1825" y="400"/><di:waypoint x="1825" y="163"/><di:waypoint x="1748" y="126"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F_HC_28_di" bpmnElement="F_HC_28">
+        <di:waypoint x="1890" y="525"/><di:waypoint x="1910" y="525"/><di:waypoint x="1910" y="196"/><di:waypoint x="1748" y="196"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
