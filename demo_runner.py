@@ -69,6 +69,7 @@ def req(method, path, **kwargs):
 
 
 def start_process(key, variables):
+    variables = {"initiator": variables.get("username", "demo"), **variables}
     payload = {"variables": {k: {"value": v, "type": "String"} for k, v in variables.items()}}
     r = req("post", f"/process-definition/key/{key}/start", json=payload)
     if r and r.status_code in (200, 201):

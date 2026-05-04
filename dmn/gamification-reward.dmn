@@ -9,7 +9,7 @@
              namespace="http://camunda.org/schema/1.0/dmn"
              exporter="Camunda Modeler"
              exporterVersion="5.21.0">
-  <decision id="GamificationRewardDecision" name="Gamification Reward Decision">
+  <decision id="GamificationRewardDecision" name="Gamification Reward Decision" camunda:historyTimeToLive="180">
     <decisionTable id="DecisionTable_Gamification" hitPolicy="FIRST">
       <input id="input_activityType" label="Activity Type" camunda:inputVariable="activityType">
         <inputExpression id="inputExpression_activityType" typeRef="string">

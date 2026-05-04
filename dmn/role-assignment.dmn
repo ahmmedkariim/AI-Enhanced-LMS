@@ -9,7 +9,7 @@
              namespace="http://camunda.org/schema/1.0/dmn"
              exporter="Camunda Modeler"
              exporterVersion="5.21.0">
-  <decision id="RoleAssignmentDecision" name="Role Assignment Decision">
+  <decision id="RoleAssignmentDecision" name="Role Assignment Decision" camunda:historyTimeToLive="180">
     <decisionTable id="DecisionTable_RoleAssignment" hitPolicy="FIRST">
       <input id="input_userType" label="User Type" camunda:inputVariable="userType">
         <inputExpression id="inputExpression_userType" typeRef="string">

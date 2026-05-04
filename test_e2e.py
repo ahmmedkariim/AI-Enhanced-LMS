@@ -54,9 +54,18 @@ def req(method, path, **kwargs):
         log(f"  ❌ Request failed: {e}", RED)
         return None
 
+def _typed_var(v):
+    if isinstance(v, bool): return {"value": v, "type": "Boolean"}
+    if isinstance(v, int):  return {"value": v, "type": "Integer"}
+    s = str(v)
+    if s.lower() in ("true", "false"):       return {"value": s.lower() == "true", "type": "Boolean"}
+    if s.lstrip("-").isdigit():              return {"value": int(s), "type": "Integer"}
+    return {"value": s, "type": "String"}
+
 def start_process(process_key: str, variables: dict) -> str | None:
     """Start a process instance and return its ID."""
-    payload = {"variables": {k: {"value": v, "type": "String"} for k, v in variables.items()}}
+    variables = {"initiator": variables.get("username", "demo"), **variables}
+    payload = {"variables": {k: _typed_var(v) for k, v in variables.items()}}
     r = req("post", f"/process-definition/key/{process_key}/start", json=payload)
     if r and r.status_code in (200, 201):
         pid = r.json().get("id")
@@ -75,7 +84,7 @@ def get_user_tasks(process_instance_id: str) -> list:
 
 def complete_user_task(task_id: str, variables: dict = None):
     """Complete a user task with optional variables."""
-    payload = {"variables": {k: {"value": v, "type": "String"} for k, v in (variables or {}).items()}}
+    payload = {"variables": {k: _typed_var(v) for k, v in (variables or {}).items()}}
     r = req("post", f"/task/{task_id}/complete", json=payload)
     return r and r.status_code == 204
 
@@ -248,6 +257,7 @@ def test_gamification():
     log("\n  🏆 Test 3a: High-performance quiz reward", BOLD)
     pid = start_process("Process_Gamification", {
         "userId":           "student-004",
+        "studentId":        "student-004",
         "username":         "ahmed",
         "userEmail":        "ahmed@student.lms.edu",
         "activityType":     "Quiz",

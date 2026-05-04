@@ -9,7 +9,7 @@
              namespace="http://camunda.org/schema/1.0/dmn"
              exporter="Camunda Modeler"
              exporterVersion="5.21.0">
-  <decision id="QuizDifficultyDecision" name="Quiz Difficulty Adjustment">
+  <decision id="QuizDifficultyDecision" name="Quiz Difficulty Adjustment" camunda:historyTimeToLive="180">
     <decisionTable id="DecisionTable_QuizDifficulty" hitPolicy="FIRST">
       <input id="input_previousScore" label="Previous Score (0-100)" camunda:inputVariable="previousScore">
         <inputExpression id="inputExpression_previousScore" typeRef="integer">

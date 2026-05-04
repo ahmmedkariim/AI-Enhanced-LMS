@@ -44,7 +44,7 @@ An **executable BPMN-based Learning Management System** featuring adaptive learn
 
 ---
 
-## 📦 Project Deliverables — All Complete
+## 📦 Project Deliverables — Alvenv\Scripts\activatel Complete
 
 | # | Deliverable | Files | Status |
 |---|---|---|---|

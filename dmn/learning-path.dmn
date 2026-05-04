@@ -9,7 +9,7 @@
              namespace="http://camunda.org/schema/1.0/dmn"
              exporter="Camunda Modeler"
              exporterVersion="5.21.0">
-  <decision id="LearningPathDecision" name="Learning Path Decision">
+  <decision id="LearningPathDecision" name="Learning Path Decision" camunda:historyTimeToLive="180">
     <decisionTable id="DecisionTable_LearningPath" hitPolicy="FIRST">
       <input id="input_quizScore" label="Quiz Score" camunda:inputVariable="quizScore">
         <inputExpression id="inputExpression_quizScore" typeRef="string">
