@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:camunda="http://camunda.org/schema/1.0/dmn"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/"
+             id="quiz_difficulty_definitions"
+             name="Quiz Difficulty Adjustment"
+             namespace="http://camunda.org/schema/1.0/dmn"
+             exporter="Camunda Modeler"
+             exporterVersion="5.21.0">
+  <decision id="QuizDifficultyDecision" name="Quiz Difficulty Adjustment">
+    <decisionTable id="DecisionTable_QuizDifficulty" hitPolicy="FIRST">
+      <input id="input_previousScore" label="Previous Score (0-100)" camunda:inputVariable="previousScore">
+        <inputExpression id="inputExpression_previousScore" typeRef="integer">
+          <text>previousScore</text>
+        </inputExpression>
+      </input>
+      <input id="input_consecutiveCorrect" label="Consecutive Correct Streak" camunda:inputVariable="consecutiveCorrect">
+        <inputExpression id="inputExpression_consecutiveCorrect" typeRef="integer">
+          <text>consecutiveCorrect</text>
+        </inputExpression>
+      </input>
+      <input id="input_avgTimeSeconds" label="Avg Time per Question (sec)" camunda:inputVariable="averageTimeSeconds">
+        <inputExpression id="inputExpression_avgTime" typeRef="integer">
+          <text>averageTimeSeconds</text>
+        </inputExpression>
+      </input>
+
+      <output id="output_difficulty" label="Next Quiz Difficulty" name="nextDifficulty" typeRef="string"/>
+      <output id="output_questionCount" label="Number of Questions" name="questionCount" typeRef="integer"/>
+      <output id="output_provideHints" label="Provide Hints" name="provideHints" typeRef="boolean"/>
+      <output id="output_timeLimit" label="Time Limit (sec)" name="timeLimitSeconds" typeRef="integer"/>
+
+      <!-- EXPERT LEVEL -->
+      <rule id="rule_q1">
+        <description>Mastery level - fast and accurate with long streak</description>
+        <inputEntry id="rule_q1_in_1"><text>&gt;= 90</text></inputEntry>
+        <inputEntry id="rule_q1_in_2"><text>&gt;= 5</text></inputEntry>
+        <inputEntry id="rule_q1_in_3"><text>&lt;= 30</text></inputEntry>
+        <outputEntry id="rule_q1_out_1"><text>"Expert"</text></outputEntry>
+        <outputEntry id="rule_q1_out_2"><text>15</text></outputEntry>
+        <outputEntry id="rule_q1_out_3"><text>false</text></outputEntry>
+        <outputEntry id="rule_q1_out_4"><text>900</text></outputEntry>
+      </rule>
+      <rule id="rule_q2">
+        <description>Excellent score with good streak - challenge them</description>
+        <inputEntry id="rule_q2_in_1"><text>&gt;= 90</text></inputEntry>
+        <inputEntry id="rule_q2_in_2"><text>&gt;= 3</text></inputEntry>
+        <inputEntry id="rule_q2_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_q2_out_1"><text>"Expert"</text></outputEntry>
+        <outputEntry id="rule_q2_out_2"><text>12</text></outputEntry>
+        <outputEntry id="rule_q2_out_3"><text>false</text></outputEntry>
+        <outputEntry id="rule_q2_out_4"><text>900</text></outputEntry>
+      </rule>
+
+      <!-- HARD LEVEL -->
+      <rule id="rule_q3">
+        <description>High score with momentum</description>
+        <inputEntry id="rule_q3_in_1"><text>[75..89]</text></inputEntry>
+        <inputEntry id="rule_q3_in_2"><text>&gt;= 2</text></inputEntry>
+        <inputEntry id="rule_q3_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_q3_out_1"><text>"Hard"</text></outputEntry>
+        <outputEntry id="rule_q3_out_2"><text>10</text></outputEntry>
+        <outputEntry id="rule_q3_out_3"><text>false</text></outputEntry>
+        <outputEntry id="rule_q3_out_4"><text>720</text></outputEntry>
+      </rule>
+      <rule id="rule_q4">
+        <description>High score without streak</description>
+        <inputEntry id="rule_q4_in_1"><text>&gt;= 75</text></inputEntry>
+        <inputEntry id="rule_q4_in_2"><text>-</text></inputEntry>
+        <inputEntry id="rule_q4_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_q4_out_1"><text>"Hard"</text></outputEntry>
+        <outputEntry id="rule_q4_out_2"><text>10</text></outputEntry>
+        <outputEntry id="rule_q4_out_3"><text>false</text></outputEntry>
+        <outputEntry id="rule_q4_out_4"><text>720</text></outputEntry>
+      </rule>
+
+      <!-- MEDIUM LEVEL -->
+      <rule id="rule_q5">
+        <description>Solid medium performer</description>
+        <inputEntry id="rule_q5_in_1"><text>[60..74]</text></inputEntry>
+        <inputEntry id="rule_q5_in_2"><text>&gt;= 1</text></inputEntry>
+        <inputEntry id="rule_q5_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_q5_out_1"><text>"Medium"</text></outputEntry>
+        <outputEntry id="rule_q5_out_2"><text>8</text></outputEntry>
+        <outputEntry id="rule_q5_out_3"><text>true</text></outputEntry>
+        <outputEntry id="rule_q5_out_4"><text>600</text></outputEntry>
+      </rule>
+      <rule id="rule_q6">
+        <description>Medium score with hints needed</description>
+        <inputEntry id="rule_q6_in_1"><text>[50..74]</text></inputEntry>
+        <inputEntry id="rule_q6_in_2"><text>-</text></inputEntry>
+        <inputEntry id="rule_q6_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_q6_out_1"><text>"Medium"</text></outputEntry>
+        <outputEntry id="rule_q6_out_2"><text>8</text></outputEntry>
+        <outputEntry id="rule_q6_out_3"><text>true</text></outputEntry>
+        <outputEntry id="rule_q6_out_4"><text>600</text></outputEntry>
+      </rule>
+
+      <!-- EASY LEVEL (Remedial) -->
+      <rule id="rule_q7">
+        <description>Struggling student - extra time and hints</description>
+        <inputEntry id="rule_q7_in_1"><text>[30..49]</text></inputEntry>
+        <inputEntry id="rule_q7_in_2"><text>-</text></inputEntry>
+        <inputEntry id="rule_q7_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_q7_out_1"><text>"Easy"</text></outputEntry>
+        <outputEntry id="rule_q7_out_2"><text>6</text></outputEntry>
+        <outputEntry id="rule_q7_out_3"><text>true</text></outputEntry>
+        <outputEntry id="rule_q7_out_4"><text>900</text></outputEntry>
+      </rule>
+      <rule id="rule_q8">
+        <description>Very low score - foundation rebuild needed</description>
+        <inputEntry id="rule_q8_in_1"><text>&lt; 30</text></inputEntry>
+        <inputEntry id="rule_q8_in_2"><text>-</text></inputEntry>
+        <inputEntry id="rule_q8_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_q8_out_1"><text>"Easy"</text></outputEntry>
+        <outputEntry id="rule_q8_out_2"><text>5</text></outputEntry>
+        <outputEntry id="rule_q8_out_3"><text>true</text></outputEntry>
+        <outputEntry id="rule_q8_out_4"><text>1200</text></outputEntry>
+      </rule>
+
+      <!-- DEFAULT FALLBACK -->
+      <rule id="rule_q9">
+        <description>Default - balanced difficulty</description>
+        <inputEntry id="rule_q9_in_1"><text>-</text></inputEntry>
+        <inputEntry id="rule_q9_in_2"><text>-</text></inputEntry>
+        <inputEntry id="rule_q9_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_q9_out_1"><text>"Medium"</text></outputEntry>
+        <outputEntry id="rule_q9_out_2"><text>8</text></outputEntry>
+        <outputEntry id="rule_q9_out_3"><text>true</text></outputEntry>
+        <outputEntry id="rule_q9_out_4"><text>600</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_4">
+      <dmndi:DMNShape id="DMNShape_QuizDifficulty" dmnElementRef="QuizDifficultyDecision">
+        <dc:Bounds height="80" width="180" x="160" y="100"/>
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

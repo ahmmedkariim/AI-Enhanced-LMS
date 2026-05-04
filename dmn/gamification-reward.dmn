@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:camunda="http://camunda.org/schema/1.0/dmn"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/"
+             id="gamification_reward_definitions"
+             name="Gamification Reward Decision"
+             namespace="http://camunda.org/schema/1.0/dmn"
+             exporter="Camunda Modeler"
+             exporterVersion="5.21.0">
+  <decision id="GamificationRewardDecision" name="Gamification Reward Decision">
+    <decisionTable id="DecisionTable_Gamification" hitPolicy="FIRST">
+      <input id="input_activityType" label="Activity Type" camunda:inputVariable="activityType">
+        <inputExpression id="inputExpression_activityType" typeRef="string">
+          <text>activityType</text>
+        </inputExpression>
+        <inputValues id="inputValues_activityType">
+          <text>"Quiz","TeamTask","Exploration","LiveQuiz","Poll","Discussion","LectureGame"</text>
+        </inputValues>
+      </input>
+      <input id="input_performance" label="Performance" camunda:inputVariable="performance">
+        <inputExpression id="inputExpression_performance" typeRef="string">
+          <text>performance</text>
+        </inputExpression>
+        <inputValues id="inputValues_performance">
+          <text>"High","Medium","Low"</text>
+        </inputValues>
+      </input>
+      <input id="input_collaboration" label="Collaboration Level" camunda:inputVariable="collaborationLevel">
+        <inputExpression id="inputExpression_collaboration" typeRef="string">
+          <text>collaborationLevel</text>
+        </inputExpression>
+        <inputValues id="inputValues_collaboration">
+          <text>"High","Medium","Low","None"</text>
+        </inputValues>
+      </input>
+
+      <output id="output_rewardType" label="Reward Type" name="rewardType" typeRef="string"/>
+      <output id="output_points" label="Points Awarded" name="pointsAwarded" typeRef="integer"/>
+      <output id="output_badgeIcon" label="Badge Icon" name="badgeIcon" typeRef="string"/>
+
+      <!-- QUIZ REWARDS -->
+      <rule id="rule_g1">
+        <description>Excellent quiz performance</description>
+        <inputEntry id="rule_g1_in_1"><text>"Quiz"</text></inputEntry>
+        <inputEntry id="rule_g1_in_2"><text>"High"</text></inputEntry>
+        <inputEntry id="rule_g1_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_g1_out_1"><text>"Gold Badge - Quiz Master"</text></outputEntry>
+        <outputEntry id="rule_g1_out_2"><text>100</text></outputEntry>
+        <outputEntry id="rule_g1_out_3"><text>"trophy_gold"</text></outputEntry>
+      </rule>
+      <rule id="rule_g2">
+        <description>Good quiz performance</description>
+        <inputEntry id="rule_g2_in_1"><text>"Quiz"</text></inputEntry>
+        <inputEntry id="rule_g2_in_2"><text>"Medium"</text></inputEntry>
+        <inputEntry id="rule_g2_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_g2_out_1"><text>"Silver Badge - Quiz Achiever"</text></outputEntry>
+        <outputEntry id="rule_g2_out_2"><text>50</text></outputEntry>
+        <outputEntry id="rule_g2_out_3"><text>"medal_silver"</text></outputEntry>
+      </rule>
+      <rule id="rule_g3">
+        <description>Effort recognition for low quiz score</description>
+        <inputEntry id="rule_g3_in_1"><text>"Quiz"</text></inputEntry>
+        <inputEntry id="rule_g3_in_2"><text>"Low"</text></inputEntry>
+        <inputEntry id="rule_g3_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_g3_out_1"><text>"Encouragement Badge - Keep Going"</text></outputEntry>
+        <outputEntry id="rule_g3_out_2"><text>10</text></outputEntry>
+        <outputEntry id="rule_g3_out_3"><text>"star_bronze"</text></outputEntry>
+      </rule>
+
+      <!-- TEAM TASK REWARDS -->
+      <rule id="rule_g4">
+        <description>Top team performer with high collaboration</description>
+        <inputEntry id="rule_g4_in_1"><text>"TeamTask"</text></inputEntry>
+        <inputEntry id="rule_g4_in_2"><text>"High"</text></inputEntry>
+        <inputEntry id="rule_g4_in_3"><text>"High"</text></inputEntry>
+        <outputEntry id="rule_g4_out_1"><text>"Team Champion Trophy"</text></outputEntry>
+        <outputEntry id="rule_g4_out_2"><text>200</text></outputEntry>
+        <outputEntry id="rule_g4_out_3"><text>"crown_team"</text></outputEntry>
+      </rule>
+      <rule id="rule_g5">
+        <description>Strong team contribution</description>
+        <inputEntry id="rule_g5_in_1"><text>"TeamTask"</text></inputEntry>
+        <inputEntry id="rule_g5_in_2"><text>"High"</text></inputEntry>
+        <inputEntry id="rule_g5_in_3"><text>"Medium"</text></inputEntry>
+        <outputEntry id="rule_g5_out_1"><text>"Team Player Badge"</text></outputEntry>
+        <outputEntry id="rule_g5_out_2"><text>150</text></outputEntry>
+        <outputEntry id="rule_g5_out_3"><text>"shield_team"</text></outputEntry>
+      </rule>
+      <rule id="rule_g6">
+        <description>Outstanding collaboration despite medium performance</description>
+        <inputEntry id="rule_g6_in_1"><text>"TeamTask"</text></inputEntry>
+        <inputEntry id="rule_g6_in_2"><text>"Medium"</text></inputEntry>
+        <inputEntry id="rule_g6_in_3"><text>"High"</text></inputEntry>
+        <outputEntry id="rule_g6_out_1"><text>"Collaboration Reward"</text></outputEntry>
+        <outputEntry id="rule_g6_out_2"><text>100</text></outputEntry>
+        <outputEntry id="rule_g6_out_3"><text>"handshake"</text></outputEntry>
+      </rule>
+      <rule id="rule_g7">
+        <description>Team participation</description>
+        <inputEntry id="rule_g7_in_1"><text>"TeamTask"</text></inputEntry>
+        <inputEntry id="rule_g7_in_2"><text>-</text></inputEntry>
+        <inputEntry id="rule_g7_in_3"><text>"Low","None"</text></inputEntry>
+        <outputEntry id="rule_g7_out_1"><text>"Team Participation Badge"</text></outputEntry>
+        <outputEntry id="rule_g7_out_2"><text>30</text></outputEntry>
+        <outputEntry id="rule_g7_out_3"><text>"users_basic"</text></outputEntry>
+      </rule>
+
+      <!-- EXPLORATION REWARDS -->
+      <rule id="rule_g8">
+        <description>Curious explorer who discovers content</description>
+        <inputEntry id="rule_g8_in_1"><text>"Exploration"</text></inputEntry>
+        <inputEntry id="rule_g8_in_2"><text>"High"</text></inputEntry>
+        <inputEntry id="rule_g8_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_g8_out_1"><text>"Hidden Discovery Badge"</text></outputEntry>
+        <outputEntry id="rule_g8_out_2"><text>75</text></outputEntry>
+        <outputEntry id="rule_g8_out_3"><text>"compass_gold"</text></outputEntry>
+      </rule>
+      <rule id="rule_g9">
+        <description>Active exploration of materials</description>
+        <inputEntry id="rule_g9_in_1"><text>"Exploration"</text></inputEntry>
+        <inputEntry id="rule_g9_in_2"><text>"Medium"</text></inputEntry>
+        <inputEntry id="rule_g9_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_g9_out_1"><text>"Curious Mind Badge"</text></outputEntry>
+        <outputEntry id="rule_g9_out_2"><text>40</text></outputEntry>
+        <outputEntry id="rule_g9_out_3"><text>"compass_silver"</text></outputEntry>
+      </rule>
+
+      <!-- LIVE QUIZ REWARDS -->
+      <rule id="rule_g10">
+        <description>Fast and accurate live quiz response</description>
+        <inputEntry id="rule_g10_in_1"><text>"LiveQuiz"</text></inputEntry>
+        <inputEntry id="rule_g10_in_2"><text>"High"</text></inputEntry>
+        <inputEntry id="rule_g10_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_g10_out_1"><text>"Quick Thinker Badge"</text></outputEntry>
+        <outputEntry id="rule_g10_out_2"><text>60</text></outputEntry>
+        <outputEntry id="rule_g10_out_3"><text>"lightning"</text></outputEntry>
+      </rule>
+      <rule id="rule_g11">
+        <description>Live quiz participation</description>
+        <inputEntry id="rule_g11_in_1"><text>"LiveQuiz"</text></inputEntry>
+        <inputEntry id="rule_g11_in_2"><text>"Medium","Low"</text></inputEntry>
+        <inputEntry id="rule_g11_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_g11_out_1"><text>"Live Participation Badge"</text></outputEntry>
+        <outputEntry id="rule_g11_out_2"><text>25</text></outputEntry>
+        <outputEntry id="rule_g11_out_3"><text>"target"</text></outputEntry>
+      </rule>
+
+      <!-- POLL REWARDS -->
+      <rule id="rule_g12">
+        <description>Poll participation</description>
+        <inputEntry id="rule_g12_in_1"><text>"Poll"</text></inputEntry>
+        <inputEntry id="rule_g12_in_2"><text>-</text></inputEntry>
+        <inputEntry id="rule_g12_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_g12_out_1"><text>"Voice Heard Badge"</text></outputEntry>
+        <outputEntry id="rule_g12_out_2"><text>20</text></outputEntry>
+        <outputEntry id="rule_g12_out_3"><text>"check_circle"</text></outputEntry>
+      </rule>
+
+      <!-- DISCUSSION REWARDS -->
+      <rule id="rule_g13">
+        <description>Active discussion contributor</description>
+        <inputEntry id="rule_g13_in_1"><text>"Discussion"</text></inputEntry>
+        <inputEntry id="rule_g13_in_2"><text>-</text></inputEntry>
+        <inputEntry id="rule_g13_in_3"><text>"High"</text></inputEntry>
+        <outputEntry id="rule_g13_out_1"><text>"Active Contributor Badge"</text></outputEntry>
+        <outputEntry id="rule_g13_out_2"><text>80</text></outputEntry>
+        <outputEntry id="rule_g13_out_3"><text>"chat_active"</text></outputEntry>
+      </rule>
+      <rule id="rule_g14">
+        <description>Discussion participation</description>
+        <inputEntry id="rule_g14_in_1"><text>"Discussion"</text></inputEntry>
+        <inputEntry id="rule_g14_in_2"><text>-</text></inputEntry>
+        <inputEntry id="rule_g14_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_g14_out_1"><text>"Discussion Participant Badge"</text></outputEntry>
+        <outputEntry id="rule_g14_out_2"><text>30</text></outputEntry>
+        <outputEntry id="rule_g14_out_3"><text>"chat_basic"</text></outputEntry>
+      </rule>
+
+      <!-- LECTURE GAME (Innovation Feature) -->
+      <rule id="rule_g15">
+        <description>AI-powered lecture game winner</description>
+        <inputEntry id="rule_g15_in_1"><text>"LectureGame"</text></inputEntry>
+        <inputEntry id="rule_g15_in_2"><text>"High"</text></inputEntry>
+        <inputEntry id="rule_g15_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_g15_out_1"><text>"AI Game Champion Trophy"</text></outputEntry>
+        <outputEntry id="rule_g15_out_2"><text>120</text></outputEntry>
+        <outputEntry id="rule_g15_out_3"><text>"robot_gold"</text></outputEntry>
+      </rule>
+      <rule id="rule_g16">
+        <description>Lecture game participant</description>
+        <inputEntry id="rule_g16_in_1"><text>"LectureGame"</text></inputEntry>
+        <inputEntry id="rule_g16_in_2"><text>-</text></inputEntry>
+        <inputEntry id="rule_g16_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_g16_out_1"><text>"Game Player Badge"</text></outputEntry>
+        <outputEntry id="rule_g16_out_2"><text>40</text></outputEntry>
+        <outputEntry id="rule_g16_out_3"><text>"gamepad"</text></outputEntry>
+      </rule>
+
+      <!-- DEFAULT FALLBACK -->
+      <rule id="rule_g17">
+        <description>Default participation reward</description>
+        <inputEntry id="rule_g17_in_1"><text>-</text></inputEntry>
+        <inputEntry id="rule_g17_in_2"><text>-</text></inputEntry>
+        <inputEntry id="rule_g17_in_3"><text>-</text></inputEntry>
+        <outputEntry id="rule_g17_out_1"><text>"Participation Points"</text></outputEntry>
+        <outputEntry id="rule_g17_out_2"><text>10</text></outputEntry>
+        <outputEntry id="rule_g17_out_3"><text>"star_basic"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_2">
+      <dmndi:DMNShape id="DMNShape_Gamification" dmnElementRef="GamificationRewardDecision">
+        <dc:Bounds height="80" width="180" x="160" y="100"/>
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>
