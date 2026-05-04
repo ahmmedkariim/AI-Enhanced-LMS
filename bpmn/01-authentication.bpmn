@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  id="Definitions_Authentication"
+                  targetNamespace="http://camunda.org/schema/lms"
+                  exporter="Camunda Modeler"
+                  exporterVersion="5.21.0">
+  <bpmn:process id="Process_Authentication" name="Authentication and Role Assignment" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:laneSet id="LaneSet_Auth">
+      <bpmn:lane id="Lane_User" name="User">
+        <bpmn:flowNodeRef>StartEvent_LoginRequest</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_EnterCredentials</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ShowError</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_LMS" name="LMS System">
+        <bpmn:flowNodeRef>Task_ValidateCredentials</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_CredentialsValid</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_DetermineRole</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SendWelcomeEmail</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_WhichRole</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_InitStudentSession</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_InitInstructorSession</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_InitAdminSession</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_StudentLoggedIn</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_InstructorLoggedIn</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_AdminLoggedIn</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_AccessDenied</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+
+    <!-- ============================================ -->
+    <!-- USER LANE: Login interaction                  -->
+    <!-- ============================================ -->
+    <bpmn:startEvent id="StartEvent_LoginRequest" name="Login Request">
+      <bpmn:outgoing>Flow_Start_to_EnterCreds</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:userTask id="Task_EnterCredentials" name="Enter Credentials" camunda:assignee="${initiator}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="username" label="Username" type="string" defaultValue="">
+            <camunda:validation>
+              <camunda:constraint name="required" />
+              <camunda:constraint name="minlength" config="3" />
+            </camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="password" label="Password" type="string">
+            <camunda:validation>
+              <camunda:constraint name="required" />
+              <camunda:constraint name="minlength" config="6" />
+            </camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="userType" label="Account Type (student/instructor/admin)" type="string" defaultValue="student">
+            <camunda:validation>
+              <camunda:constraint name="required" />
+            </camunda:validation>
+          </camunda:formField>
+          <camunda:formField id="emailDomain" label="Email Domain" type="string" defaultValue="student.lms.edu" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_to_EnterCreds</bpmn:incoming>
+      <bpmn:incoming>Flow_ShowError_to_EnterCreds</bpmn:incoming>
+      <bpmn:outgoing>Flow_EnterCreds_to_Validate</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_ShowError" name="Show Error Message" camunda:assignee="${initiator}">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="errorMessage" label="Error" type="string" defaultValue="Invalid credentials. Please try again.">
+            <camunda:properties>
+              <camunda:property id="readonly" value="true" />
+            </camunda:properties>
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Invalid_to_ShowError</bpmn:incoming>
+      <bpmn:outgoing>Flow_ShowError_to_EnterCreds</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- ============================================ -->
+    <!-- LMS LANE: Backend processing                  -->
+    <!-- ============================================ -->
+    <bpmn:serviceTask id="Task_ValidateCredentials"
+                      name="Validate Credentials"
+                      camunda:type="external"
+                      camunda:topic="validate-credentials">
+      <bpmn:incoming>Flow_EnterCreds_to_Validate</bpmn:incoming>
+      <bpmn:outgoing>Flow_Validate_to_Gateway</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_CredentialsValid" name="Credentials Valid?" default="Flow_Invalid_to_ShowError">
+      <bpmn:incoming>Flow_Validate_to_Gateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_Valid_to_DetermineRole</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Invalid_to_ShowError</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:businessRuleTask id="Task_DetermineRole"
+                           name="Determine Role (DMN)"
+                           camunda:resultVariable="roleResult"
+                           camunda:decisionRef="RoleAssignmentDecision"
+                           camunda:mapDecisionResult="singleResult">
+      <bpmn:incoming>Flow_Valid_to_DetermineRole</bpmn:incoming>
+      <bpmn:outgoing>Flow_DetermineRole_to_Email</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <bpmn:serviceTask id="Task_SendWelcomeEmail"
+                      name="Send Welcome Email"
+                      camunda:type="external"
+                      camunda:topic="send-welcome-email">
+      <bpmn:incoming>Flow_DetermineRole_to_Email</bpmn:incoming>
+      <bpmn:outgoing>Flow_Email_to_RoleGateway</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_WhichRole" name="Which Role?" default="Flow_Default_to_Denied">
+      <bpmn:incoming>Flow_Email_to_RoleGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_Student_to_Init</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Instructor_to_Init</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Admin_to_Init</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Default_to_Denied</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Task_InitStudentSession"
+                      name="Initialize Student Session"
+                      camunda:type="external"
+                      camunda:topic="init-student-session">
+      <bpmn:incoming>Flow_Student_to_Init</bpmn:incoming>
+      <bpmn:outgoing>Flow_StudentInit_to_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_InitInstructorSession"
+                      name="Initialize Instructor Session"
+                      camunda:type="external"
+                      camunda:topic="init-instructor-session">
+      <bpmn:incoming>Flow_Instructor_to_Init</bpmn:incoming>
+      <bpmn:outgoing>Flow_InstructorInit_to_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_InitAdminSession"
+                      name="Initialize Admin Session"
+                      camunda:type="external"
+                      camunda:topic="init-admin-session">
+      <bpmn:incoming>Flow_Admin_to_Init</bpmn:incoming>
+      <bpmn:outgoing>Flow_AdminInit_to_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_StudentLoggedIn" name="Student Logged In">
+      <bpmn:incoming>Flow_StudentInit_to_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:endEvent id="EndEvent_InstructorLoggedIn" name="Instructor Logged In">
+      <bpmn:incoming>Flow_InstructorInit_to_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:endEvent id="EndEvent_AdminLoggedIn" name="Admin Logged In">
+      <bpmn:incoming>Flow_AdminInit_to_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:endEvent id="EndEvent_AccessDenied" name="Access Denied">
+      <bpmn:incoming>Flow_Default_to_Denied</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <!-- ============================================ -->
+    <!-- SEQUENCE FLOWS                                -->
+    <!-- ============================================ -->
+    <bpmn:sequenceFlow id="Flow_Start_to_EnterCreds" sourceRef="StartEvent_LoginRequest" targetRef="Task_EnterCredentials" />
+    <bpmn:sequenceFlow id="Flow_EnterCreds_to_Validate" sourceRef="Task_EnterCredentials" targetRef="Task_ValidateCredentials" />
+    <bpmn:sequenceFlow id="Flow_Validate_to_Gateway" sourceRef="Task_ValidateCredentials" targetRef="Gateway_CredentialsValid" />
+
+    <bpmn:sequenceFlow id="Flow_Valid_to_DetermineRole" name="Yes" sourceRef="Gateway_CredentialsValid" targetRef="Task_DetermineRole">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${credentialsValid == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_Invalid_to_ShowError" name="No" sourceRef="Gateway_CredentialsValid" targetRef="Task_ShowError" />
+    <bpmn:sequenceFlow id="Flow_ShowError_to_EnterCreds" sourceRef="Task_ShowError" targetRef="Task_EnterCredentials" />
+
+    <bpmn:sequenceFlow id="Flow_DetermineRole_to_Email" sourceRef="Task_DetermineRole" targetRef="Task_SendWelcomeEmail" />
+    <bpmn:sequenceFlow id="Flow_Email_to_RoleGateway" sourceRef="Task_SendWelcomeEmail" targetRef="Gateway_WhichRole" />
+
+    <bpmn:sequenceFlow id="Flow_Student_to_Init" name="Student" sourceRef="Gateway_WhichRole" targetRef="Task_InitStudentSession">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${roleResult.assignedRole == "STUDENT"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_Instructor_to_Init" name="Instructor" sourceRef="Gateway_WhichRole" targetRef="Task_InitInstructorSession">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${roleResult.assignedRole == "INSTRUCTOR"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_Admin_to_Init" name="Admin" sourceRef="Gateway_WhichRole" targetRef="Task_InitAdminSession">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${roleResult.assignedRole == "ADMIN"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_Default_to_Denied" name="Other / Guest" sourceRef="Gateway_WhichRole" targetRef="EndEvent_AccessDenied" />
+
+    <bpmn:sequenceFlow id="Flow_StudentInit_to_End" sourceRef="Task_InitStudentSession" targetRef="EndEvent_StudentLoggedIn" />
+    <bpmn:sequenceFlow id="Flow_InstructorInit_to_End" sourceRef="Task_InitInstructorSession" targetRef="EndEvent_InstructorLoggedIn" />
+    <bpmn:sequenceFlow id="Flow_AdminInit_to_End" sourceRef="Task_InitAdminSession" targetRef="EndEvent_AdminLoggedIn" />
+  </bpmn:process>
+
+  <!-- ============================================ -->
+  <!-- VISUAL LAYOUT (BPMN DI)                       -->
+  <!-- ============================================ -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Auth">
+    <bpmndi:BPMNPlane id="BPMNPlane_Auth" bpmnElement="Process_Authentication">
+      <!-- Lanes -->
+      <bpmndi:BPMNShape id="Lane_User_di" bpmnElement="Lane_User" isHorizontal="true">
+        <dc:Bounds x="180" y="80" width="1280" height="180" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_LMS_di" bpmnElement="Lane_LMS" isHorizontal="true">
+        <dc:Bounds x="180" y="260" width="1280" height="500" />
+      </bpmndi:BPMNShape>
+
+      <!-- User Lane Elements -->
+      <bpmndi:BPMNShape id="StartEvent_LoginRequest_di" bpmnElement="StartEvent_LoginRequest">
+        <dc:Bounds x="232" y="152" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="217" y="195" width="68" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_EnterCredentials_di" bpmnElement="Task_EnterCredentials">
+        <dc:Bounds x="320" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_ShowError_di" bpmnElement="Task_ShowError">
+        <dc:Bounds x="600" y="130" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <!-- LMS Lane Row 1 (y around 340) -->
+      <bpmndi:BPMNShape id="Task_ValidateCredentials_di" bpmnElement="Task_ValidateCredentials">
+        <dc:Bounds x="470" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_CredentialsValid_di" bpmnElement="Gateway_CredentialsValid" isMarkerVisible="true">
+        <dc:Bounds x="625" y="355" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="608" y="412" width="84" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_DetermineRole_di" bpmnElement="Task_DetermineRole">
+        <dc:Bounds x="730" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_SendWelcomeEmail_di" bpmnElement="Task_SendWelcomeEmail">
+        <dc:Bounds x="890" y="340" width="100" height="80" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_WhichRole_di" bpmnElement="Gateway_WhichRole" isMarkerVisible="true">
+        <dc:Bounds x="1045" y="355" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1042" y="412" width="60" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Branch destinations -->
+      <bpmndi:BPMNShape id="Task_InitStudentSession_di" bpmnElement="Task_InitStudentSession">
+        <dc:Bounds x="1170" y="290" width="120" height="60" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_InitInstructorSession_di" bpmnElement="Task_InitInstructorSession">
+        <dc:Bounds x="1170" y="370" width="120" height="60" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_InitAdminSession_di" bpmnElement="Task_InitAdminSession">
+        <dc:Bounds x="1170" y="450" width="120" height="60" />
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="EndEvent_StudentLoggedIn_di" bpmnElement="EndEvent_StudentLoggedIn">
+        <dc:Bounds x="1330" y="302" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1306" y="345" width="84" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="EndEvent_InstructorLoggedIn_di" bpmnElement="EndEvent_InstructorLoggedIn">
+        <dc:Bounds x="1330" y="382" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1300" y="425" width="96" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="EndEvent_AdminLoggedIn_di" bpmnElement="EndEvent_AdminLoggedIn">
+        <dc:Bounds x="1330" y="462" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1310" y="505" width="76" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="EndEvent_AccessDenied_di" bpmnElement="EndEvent_AccessDenied">
+        <dc:Bounds x="1330" y="582" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1308" y="625" width="80" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <!-- Sequence Flow Edges -->
+      <bpmndi:BPMNEdge id="Flow_Start_to_EnterCreds_di" bpmnElement="Flow_Start_to_EnterCreds">
+        <di:waypoint x="268" y="170" />
+        <di:waypoint x="320" y="170" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_EnterCreds_to_Validate_di" bpmnElement="Flow_EnterCreds_to_Validate">
+        <di:waypoint x="370" y="210" />
+        <di:waypoint x="370" y="380" />
+        <di:waypoint x="470" y="380" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Validate_to_Gateway_di" bpmnElement="Flow_Validate_to_Gateway">
+        <di:waypoint x="570" y="380" />
+        <di:waypoint x="625" y="380" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Valid_to_DetermineRole_di" bpmnElement="Flow_Valid_to_DetermineRole">
+        <di:waypoint x="675" y="380" />
+        <di:waypoint x="730" y="380" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="690" y="362" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Invalid_to_ShowError_di" bpmnElement="Flow_Invalid_to_ShowError">
+        <di:waypoint x="650" y="355" />
+        <di:waypoint x="650" y="210" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="660" y="280" width="14" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_ShowError_to_EnterCreds_di" bpmnElement="Flow_ShowError_to_EnterCreds">
+        <di:waypoint x="600" y="170" />
+        <di:waypoint x="420" y="170" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_DetermineRole_to_Email_di" bpmnElement="Flow_DetermineRole_to_Email">
+        <di:waypoint x="830" y="380" />
+        <di:waypoint x="890" y="380" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Email_to_RoleGateway_di" bpmnElement="Flow_Email_to_RoleGateway">
+        <di:waypoint x="990" y="380" />
+        <di:waypoint x="1045" y="380" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Student_to_Init_di" bpmnElement="Flow_Student_to_Init">
+        <di:waypoint x="1070" y="355" />
+        <di:waypoint x="1070" y="320" />
+        <di:waypoint x="1170" y="320" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1080" y="300" width="50" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Instructor_to_Init_di" bpmnElement="Flow_Instructor_to_Init">
+        <di:waypoint x="1095" y="380" />
+        <di:waypoint x="1170" y="400" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1100" y="385" width="60" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Admin_to_Init_di" bpmnElement="Flow_Admin_to_Init">
+        <di:waypoint x="1070" y="405" />
+        <di:waypoint x="1070" y="480" />
+        <di:waypoint x="1170" y="480" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1080" y="460" width="42" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Default_to_Denied_di" bpmnElement="Flow_Default_to_Denied">
+        <di:waypoint x="1070" y="405" />
+        <di:waypoint x="1070" y="600" />
+        <di:waypoint x="1330" y="600" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1100" y="582" width="84" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_StudentInit_to_End_di" bpmnElement="Flow_StudentInit_to_End">
+        <di:waypoint x="1290" y="320" />
+        <di:waypoint x="1330" y="320" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_InstructorInit_to_End_di" bpmnElement="Flow_InstructorInit_to_End">
+        <di:waypoint x="1290" y="400" />
+        <di:waypoint x="1330" y="400" />
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_AdminInit_to_End_di" bpmnElement="Flow_AdminInit_to_End">
+        <di:waypoint x="1290" y="480" />
+        <di:waypoint x="1330" y="480" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
