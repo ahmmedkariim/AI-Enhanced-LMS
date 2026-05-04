@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 2,
+  "exporter": { "name": "Camunda Modeler", "version": "5.21.0" },
+  "id": "form-submit-goals",
+  "type": "default",
+  "components": [
+    {
+      "type": "text",
+      "text": "## 📝 Student Onboarding\nTell us about your learning goals so our AI can personalize your experience.",
+      "id": "text-header"
+    },
+    {
+      "type": "textarea",
+      "id": "learningGoals",
+      "key": "learningGoals",
+      "label": "What do you want to learn?",
+      "description": "Describe your learning goals in detail",
+      "validate": { "required": true }
+    },
+    {
+      "type": "textfield",
+      "id": "subjectAreas",
+      "key": "subjectAreas",
+      "label": "Subject Areas",
+      "description": "e.g. Python, Data Science, Web Development",
+      "defaultValue": "Software Engineering"
+    },
+    {
+      "type": "select",
+      "id": "learningStyle",
+      "key": "learningStyle",
+      "label": "Preferred Learning Style",
+      "defaultValue": "Visual",
+      "values": [
+        { "label": "👁️ Visual — Diagrams & Videos",          "value": "Visual" },
+        { "label": "🎧 Auditory — Podcasts & Lectures",      "value": "Auditory" },
+        { "label": "🤚 Kinesthetic — Hands-on & Labs",       "value": "Kinesthetic" },
+        { "label": "⚡ Active — Group Work & Challenges",    "value": "Active" },
+        { "label": "🤔 Reflective — Reading & Analysis",     "value": "Reflective" }
+      ],
+      "validate": { "required": true }
+    },
+    {
+      "type": "number",
+      "id": "weeklyHours",
+      "key": "weeklyHours",
+      "label": "Available study hours per week",
+      "defaultValue": 5,
+      "validate": { "required": true, "min": 1, "max": 40 }
+    },
+    {
+      "type": "select",
+      "id": "experienceLevel",
+      "key": "experienceLevel",
+      "label": "Current Experience Level",
+      "defaultValue": "Beginner",
+      "values": [
+        { "label": "🌱 Beginner",      "value": "Beginner" },
+        { "label": "📈 Intermediate",  "value": "Intermediate" },
+        { "label": "🚀 Advanced",      "value": "Advanced" }
+      ],
+      "validate": { "required": true }
+    }
+  ]
+}

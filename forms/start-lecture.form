@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 2,
+  "exporter": { "name": "Camunda Modeler", "version": "5.21.0" },
+  "id": "form-start-lecture",
+  "type": "default",
+  "components": [
+    {
+      "type": "text",
+      "text": "## 🏫 Start Hybrid Lecture Session\nInstructor: Configure today's lecture before students join.",
+      "id": "text-header"
+    },
+    {
+      "type": "textfield",
+      "id": "lectureTitle",
+      "key": "lectureTitle",
+      "label": "Lecture Title",
+      "defaultValue": "Software Engineering Fundamentals",
+      "validate": { "required": true }
+    },
+    {
+      "type": "textarea",
+      "id": "lectureTopics",
+      "key": "lectureTopics",
+      "label": "Topics to Cover",
+      "defaultValue": "BPMN, DMN, Process Automation, AI Integration",
+      "validate": { "required": true }
+    },
+    {
+      "type": "number",
+      "id": "estimatedDuration",
+      "key": "estimatedDuration",
+      "label": "Estimated Duration (minutes)",
+      "defaultValue": 90,
+      "validate": { "required": true, "min": 30, "max": 180 }
+    },
+    {
+      "type": "select",
+      "id": "classroomMode",
+      "key": "classroomMode",
+      "label": "Classroom Mode",
+      "defaultValue": "hybrid",
+      "values": [
+        { "label": "🏫 Hybrid (Physical + Online)", "value": "hybrid" },
+        { "label": "💻 Fully Online",               "value": "online" },
+        { "label": "🏢 Physical Only",              "value": "physical" }
+      ],
+      "validate": { "required": true }
+    }
+  ]
+}

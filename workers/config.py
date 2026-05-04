@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ─── Camunda Engine ──────────────────────────────────────────────────────────
-CAMUNDA_URL = os.getenv("CAMUNDA_REST_URL", "http://127.0.0.1:8080/engine-rest")
+CAMUNDA_URL = os.getenv("CAMUNDA_REST_URL", "http://localhost:8080/engine-rest")
 CAMUNDA_USER = os.getenv("CAMUNDA_USERNAME", "demo")
 CAMUNDA_PASS = os.getenv("CAMUNDA_PASSWORD", "demo")
 

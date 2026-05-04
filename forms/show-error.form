@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "exporter": { "name": "Camunda Modeler", "version": "5.21.0" },
+  "id": "form-show-error",
+  "type": "default",
+  "components": [
+    {
+      "type": "text",
+      "text": "## ❌ Login Failed\nYour credentials are invalid. Please check and try again.",
+      "id": "text-error-header"
+    },
+    {
+      "type": "textfield",
+      "id": "errorMessage",
+      "key": "errorMessage",
+      "label": "Error Details",
+      "defaultValue": "Invalid username, password, or account type.",
+      "disabled": true
+    },
+    {
+      "type": "text",
+      "text": "**Demo credentials:**\n- Student: `ahmed` / `password123`\n- Instructor: `dr_sara` / `password123`\n- Admin: `system_admin` / `admin456`",
+      "id": "text-hint"
+    }
+  ]
+}

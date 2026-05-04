@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 2,
+  "exporter": { "name": "Camunda Modeler", "version": "5.21.0" },
+  "id": "form-view-achievement",
+  "type": "default",
+  "components": [
+    {
+      "type": "text",
+      "text": "## 🏆 Achievement Unlocked!\nCongratulations! You have earned a new reward. Check your email for details.",
+      "id": "text-header"
+    },
+    {
+      "type": "textfield",
+      "id": "badgeName",
+      "key": "badgeName",
+      "label": "Badge Earned",
+      "description": "Calculated by DMN 2: Gamification Reward Decision",
+      "disabled": true
+    },
+    {
+      "type": "textfield",
+      "id": "pointsAwarded",
+      "key": "pointsAwarded",
+      "label": "Points Awarded",
+      "disabled": true
+    },
+    {
+      "type": "textfield",
+      "id": "totalPoints",
+      "key": "totalPoints",
+      "label": "Your Total Points",
+      "disabled": true
+    },
+    {
+      "type": "textfield",
+      "id": "currentRank",
+      "key": "currentRank",
+      "label": "Your Leaderboard Rank",
+      "disabled": true
+    },
+    {
+      "type": "text",
+      "text": "---\n**How do you feel about this achievement?**",
+      "id": "text-reaction"
+    },
+    {
+      "type": "select",
+      "id": "studentReaction",
+      "key": "studentReaction",
+      "label": "Your Reaction",
+      "defaultValue": "excited",
+      "values": [
+        { "label": "🎉 Excited — This motivates me!",          "value": "excited" },
+        { "label": "💪 Motivated to learn more",               "value": "motivated" },
+        { "label": "✅ Acknowledged",                          "value": "neutral" }
+      ]
+    },
+    {
+      "type": "checkbox",
+      "id": "rewardViewed",
+      "key": "rewardViewed",
+      "label": "I have seen my reward — continue!",
+      "defaultValue": true,
+      "validate": { "required": true }
+    }
+  ]
+}

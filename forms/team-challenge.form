@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 2,
+  "exporter": { "name": "Camunda Modeler", "version": "5.21.0" },
+  "id": "form-team-challenge",
+  "type": "default",
+  "components": [
+    {
+      "type": "text",
+      "text": "## 🤝 Team Challenge\nYour AI-assigned team is ready! Work together to solve the challenge. Collaboration earns bonus points!",
+      "id": "text-header"
+    },
+    {
+      "type": "textfield",
+      "id": "teamName",
+      "key": "teamName",
+      "label": "Your Team Name",
+      "description": "Assigned by AI based on personality profiles",
+      "disabled": true
+    },
+    {
+      "type": "textarea",
+      "id": "challengeResponse",
+      "key": "challengeResponse",
+      "label": "Team Solution / Response",
+      "description": "Submit your team's answer to the challenge",
+      "validate": { "required": true }
+    },
+    {
+      "type": "select",
+      "id": "collaborationLevel",
+      "key": "collaborationLevel",
+      "label": "How well did your team collaborate?",
+      "defaultValue": "High",
+      "values": [
+        { "label": "🌟 High — Everyone contributed equally",   "value": "High" },
+        { "label": "📈 Medium — Most members contributed",     "value": "Medium" },
+        { "label": "📉 Low — Limited team participation",      "value": "Low" }
+      ],
+      "validate": { "required": true }
+    }
+  ]
+}

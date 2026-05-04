@@ -97,14 +97,6 @@ def handle_gamification_task(task):
             logger.warning("Unknown gamification topic: %s", topic)
             result = {"status": "completed"}
 
-        # Ensure totalPoints and weeklyStreak are always returned to the process instance
-        if isinstance(result, dict):
-            if "totalPoints" not in result:
-                result["totalPoints"] = get_total_points(student_id)
-            if "weeklyStreak" not in result:
-                profile = get_student_profile(student_id)
-                result["weeklyStreak"] = profile.get("weekly_streak", 0) if profile else 0
-
         logger.info("✅ Gamification complete: %s → %s", topic, result)
         return task.complete(result)
 

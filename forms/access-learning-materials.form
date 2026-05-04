@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 2,
+  "exporter": { "name": "Camunda Modeler", "version": "5.21.0" },
+  "id": "form-access-materials",
+  "type": "default",
+  "components": [
+    {
+      "type": "text",
+      "text": "## 🎓 Your Personalized Learning Materials\nBased on your profile and DMN decision, here is your assigned learning path.",
+      "id": "text-header"
+    },
+    {
+      "type": "textfield",
+      "id": "nextLearningPath",
+      "key": "nextLearningPath",
+      "label": "Current Learning Path",
+      "description": "Assigned by DMN 1: Learning Path Decision",
+      "disabled": true
+    },
+    {
+      "type": "text",
+      "text": "---\n**Complete an activity to proceed:**",
+      "id": "text-divider"
+    },
+    {
+      "type": "select",
+      "id": "activityType",
+      "key": "activityType",
+      "label": "Activity Completed",
+      "defaultValue": "Quiz",
+      "values": [
+        { "label": "📝 Quiz",              "value": "Quiz" },
+        { "label": "🤝 Team Task",         "value": "TeamTask" },
+        { "label": "🔍 Exploration",       "value": "Exploration" },
+        { "label": "📖 Reading",           "value": "Reading" },
+        { "label": "🧪 Lab Exercise",      "value": "Lab" }
+      ],
+      "validate": { "required": true }
+    },
+    {
+      "type": "checkbox",
+      "id": "activityCompleted",
+      "key": "activityCompleted",
+      "label": "I have completed this activity",
+      "defaultValue": false,
+      "validate": { "required": true }
+    }
+  ]
+}
