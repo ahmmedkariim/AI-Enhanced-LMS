@@ -1,15 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
-             xmlns:camunda="http://camunda.org/schema/1.0/dmn"
-             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
-             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
-             xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/"
-             id="role_assignment_definitions"
-             name="Role Assignment Decision"
-             namespace="http://camunda.org/schema/1.0/dmn"
-             exporter="Camunda Modeler"
-             exporterVersion="5.21.0">
-  <decision id="RoleAssignmentDecision" name="Role Assignment Decision">
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:camunda="http://camunda.org/schema/1.0/dmn" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" id="role_assignment_definitions" name="Role Assignment Decision" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.45.0">
+  <decision id="RoleAssignmentDecision" name="Role Assignment Decision" camunda:historyTimeToLive="10">
     <decisionTable id="DecisionTable_RoleAssignment" hitPolicy="FIRST">
       <input id="input_userType" label="User Type" camunda:inputVariable="userType">
         <inputExpression id="inputExpression_userType" typeRef="string">
@@ -29,131 +20,279 @@
           <text>credentialsValid</text>
         </inputExpression>
       </input>
-
-      <output id="output_role" label="Assigned Role" name="assignedRole" typeRef="string"/>
-      <output id="output_dashboard" label="Dashboard Route" name="dashboardRoute" typeRef="string"/>
-      <output id="output_permissions" label="Permissions" name="permissions" typeRef="string"/>
-      <output id="output_accessGranted" label="Access Granted" name="accessGranted" typeRef="boolean"/>
-
-      <!-- INVALID CREDENTIALS - DENY ALL -->
+      <output id="output_role" label="Assigned Role" name="assignedRole" typeRef="string" />
+      <output id="output_dashboard" label="Dashboard Route" name="dashboardRoute" typeRef="string" />
+      <output id="output_permissions" label="Permissions" name="permissions" typeRef="string" />
+      <output id="output_accessGranted" label="Access Granted" name="accessGranted" typeRef="boolean" />
       <rule id="rule_r1">
         <description>Invalid credentials - access denied regardless of user type</description>
-        <inputEntry id="rule_r1_in_1"><text>-</text></inputEntry>
-        <inputEntry id="rule_r1_in_2"><text>-</text></inputEntry>
-        <inputEntry id="rule_r1_in_3"><text>false</text></inputEntry>
-        <outputEntry id="rule_r1_out_1"><text>"GUEST"</text></outputEntry>
-        <outputEntry id="rule_r1_out_2"><text>"/login?error=invalid"</text></outputEntry>
-        <outputEntry id="rule_r1_out_3"><text>"none"</text></outputEntry>
-        <outputEntry id="rule_r1_out_4"><text>false</text></outputEntry>
+        <inputEntry id="rule_r1_in_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_r1_in_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_r1_in_3">
+          <text>false</text>
+        </inputEntry>
+        <outputEntry id="rule_r1_out_1">
+          <text>"GUEST"</text>
+        </outputEntry>
+        <outputEntry id="rule_r1_out_2">
+          <text>"/login?error=invalid"</text>
+        </outputEntry>
+        <outputEntry id="rule_r1_out_3">
+          <text>"none"</text>
+        </outputEntry>
+        <outputEntry id="rule_r1_out_4">
+          <text>false</text>
+        </outputEntry>
       </rule>
-
-      <!-- ADMIN ROLES -->
       <rule id="rule_r2">
         <description>Admin user from admin domain</description>
-        <inputEntry id="rule_r2_in_1"><text>"admin"</text></inputEntry>
-        <inputEntry id="rule_r2_in_2"><text>"admin.lms.edu"</text></inputEntry>
-        <inputEntry id="rule_r2_in_3"><text>true</text></inputEntry>
-        <outputEntry id="rule_r2_out_1"><text>"ADMIN"</text></outputEntry>
-        <outputEntry id="rule_r2_out_2"><text>"/admin/dashboard"</text></outputEntry>
-        <outputEntry id="rule_r2_out_3"><text>"system_control,user_management,full_access"</text></outputEntry>
-        <outputEntry id="rule_r2_out_4"><text>true</text></outputEntry>
+        <inputEntry id="rule_r2_in_1">
+          <text>"admin"</text>
+        </inputEntry>
+        <inputEntry id="rule_r2_in_2">
+          <text>"admin.lms.edu"</text>
+        </inputEntry>
+        <inputEntry id="rule_r2_in_3">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="rule_r2_out_1">
+          <text>"ADMIN"</text>
+        </outputEntry>
+        <outputEntry id="rule_r2_out_2">
+          <text>"/admin/dashboard"</text>
+        </outputEntry>
+        <outputEntry id="rule_r2_out_3">
+          <text>"system_control,user_management,full_access"</text>
+        </outputEntry>
+        <outputEntry id="rule_r2_out_4">
+          <text>true</text>
+        </outputEntry>
       </rule>
       <rule id="rule_r3">
         <description>Admin user from any domain</description>
-        <inputEntry id="rule_r3_in_1"><text>"admin"</text></inputEntry>
-        <inputEntry id="rule_r3_in_2"><text>-</text></inputEntry>
-        <inputEntry id="rule_r3_in_3"><text>true</text></inputEntry>
-        <outputEntry id="rule_r3_out_1"><text>"ADMIN"</text></outputEntry>
-        <outputEntry id="rule_r3_out_2"><text>"/admin/dashboard"</text></outputEntry>
-        <outputEntry id="rule_r3_out_3"><text>"system_control,user_management"</text></outputEntry>
-        <outputEntry id="rule_r3_out_4"><text>true</text></outputEntry>
+        <inputEntry id="rule_r3_in_1">
+          <text>"admin"</text>
+        </inputEntry>
+        <inputEntry id="rule_r3_in_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_r3_in_3">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="rule_r3_out_1">
+          <text>"ADMIN"</text>
+        </outputEntry>
+        <outputEntry id="rule_r3_out_2">
+          <text>"/admin/dashboard"</text>
+        </outputEntry>
+        <outputEntry id="rule_r3_out_3">
+          <text>"system_control,user_management"</text>
+        </outputEntry>
+        <outputEntry id="rule_r3_out_4">
+          <text>true</text>
+        </outputEntry>
       </rule>
-
-      <!-- INSTRUCTOR ROLES -->
       <rule id="rule_r4">
         <description>Instructor from faculty domain</description>
-        <inputEntry id="rule_r4_in_1"><text>"instructor"</text></inputEntry>
-        <inputEntry id="rule_r4_in_2"><text>"faculty.edu","faculty.lms.edu"</text></inputEntry>
-        <inputEntry id="rule_r4_in_3"><text>true</text></inputEntry>
-        <outputEntry id="rule_r4_out_1"><text>"INSTRUCTOR"</text></outputEntry>
-        <outputEntry id="rule_r4_out_2"><text>"/instructor/teaching-dashboard"</text></outputEntry>
-        <outputEntry id="rule_r4_out_3"><text>"manage_content,monitor_students,grade_assignments,start_lectures"</text></outputEntry>
-        <outputEntry id="rule_r4_out_4"><text>true</text></outputEntry>
+        <inputEntry id="rule_r4_in_1">
+          <text>"instructor"</text>
+        </inputEntry>
+        <inputEntry id="rule_r4_in_2">
+          <text>"faculty.edu","faculty.lms.edu"</text>
+        </inputEntry>
+        <inputEntry id="rule_r4_in_3">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="rule_r4_out_1">
+          <text>"INSTRUCTOR"</text>
+        </outputEntry>
+        <outputEntry id="rule_r4_out_2">
+          <text>"/instructor/teaching-dashboard"</text>
+        </outputEntry>
+        <outputEntry id="rule_r4_out_3">
+          <text>"manage_content,monitor_students,grade_assignments,start_lectures"</text>
+        </outputEntry>
+        <outputEntry id="rule_r4_out_4">
+          <text>true</text>
+        </outputEntry>
       </rule>
       <rule id="rule_r5">
         <description>Instructor user general</description>
-        <inputEntry id="rule_r5_in_1"><text>"instructor"</text></inputEntry>
-        <inputEntry id="rule_r5_in_2"><text>-</text></inputEntry>
-        <inputEntry id="rule_r5_in_3"><text>true</text></inputEntry>
-        <outputEntry id="rule_r5_out_1"><text>"INSTRUCTOR"</text></outputEntry>
-        <outputEntry id="rule_r5_out_2"><text>"/instructor/teaching-dashboard"</text></outputEntry>
-        <outputEntry id="rule_r5_out_3"><text>"manage_content,monitor_students,grade_assignments"</text></outputEntry>
-        <outputEntry id="rule_r5_out_4"><text>true</text></outputEntry>
+        <inputEntry id="rule_r5_in_1">
+          <text>"instructor"</text>
+        </inputEntry>
+        <inputEntry id="rule_r5_in_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_r5_in_3">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="rule_r5_out_1">
+          <text>"INSTRUCTOR"</text>
+        </outputEntry>
+        <outputEntry id="rule_r5_out_2">
+          <text>"/instructor/teaching-dashboard"</text>
+        </outputEntry>
+        <outputEntry id="rule_r5_out_3">
+          <text>"manage_content,monitor_students,grade_assignments"</text>
+        </outputEntry>
+        <outputEntry id="rule_r5_out_4">
+          <text>true</text>
+        </outputEntry>
       </rule>
-
-      <!-- STUDENT ROLES -->
       <rule id="rule_r6">
         <description>Student from student domain</description>
-        <inputEntry id="rule_r6_in_1"><text>"student"</text></inputEntry>
-        <inputEntry id="rule_r6_in_2"><text>"student.edu","student.lms.edu"</text></inputEntry>
-        <inputEntry id="rule_r6_in_3"><text>true</text></inputEntry>
-        <outputEntry id="rule_r6_out_1"><text>"STUDENT"</text></outputEntry>
-        <outputEntry id="rule_r6_out_2"><text>"/student/learning-hub"</text></outputEntry>
-        <outputEntry id="rule_r6_out_3"><text>"access_courses,take_quizzes,view_progress,join_lectures,earn_rewards"</text></outputEntry>
-        <outputEntry id="rule_r6_out_4"><text>true</text></outputEntry>
+        <inputEntry id="rule_r6_in_1">
+          <text>"student"</text>
+        </inputEntry>
+        <inputEntry id="rule_r6_in_2">
+          <text>"student.edu","student.lms.edu"</text>
+        </inputEntry>
+        <inputEntry id="rule_r6_in_3">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="rule_r6_out_1">
+          <text>"STUDENT"</text>
+        </outputEntry>
+        <outputEntry id="rule_r6_out_2">
+          <text>"/student/learning-hub"</text>
+        </outputEntry>
+        <outputEntry id="rule_r6_out_3">
+          <text>"access_courses,take_quizzes,view_progress,join_lectures,earn_rewards"</text>
+        </outputEntry>
+        <outputEntry id="rule_r6_out_4">
+          <text>true</text>
+        </outputEntry>
       </rule>
       <rule id="rule_r7">
         <description>Student user general</description>
-        <inputEntry id="rule_r7_in_1"><text>"student"</text></inputEntry>
-        <inputEntry id="rule_r7_in_2"><text>-</text></inputEntry>
-        <inputEntry id="rule_r7_in_3"><text>true</text></inputEntry>
-        <outputEntry id="rule_r7_out_1"><text>"STUDENT"</text></outputEntry>
-        <outputEntry id="rule_r7_out_2"><text>"/student/learning-hub"</text></outputEntry>
-        <outputEntry id="rule_r7_out_3"><text>"access_courses,take_quizzes,view_progress"</text></outputEntry>
-        <outputEntry id="rule_r7_out_4"><text>true</text></outputEntry>
+        <inputEntry id="rule_r7_in_1">
+          <text>"student"</text>
+        </inputEntry>
+        <inputEntry id="rule_r7_in_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_r7_in_3">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="rule_r7_out_1">
+          <text>"STUDENT"</text>
+        </outputEntry>
+        <outputEntry id="rule_r7_out_2">
+          <text>"/student/learning-hub"</text>
+        </outputEntry>
+        <outputEntry id="rule_r7_out_3">
+          <text>"access_courses,take_quizzes,view_progress"</text>
+        </outputEntry>
+        <outputEntry id="rule_r7_out_4">
+          <text>true</text>
+        </outputEntry>
       </rule>
-
-      <!-- AI SERVICE ACCOUNT -->
       <rule id="rule_r8">
         <description>AI Service automated account</description>
-        <inputEntry id="rule_r8_in_1"><text>"ai_service"</text></inputEntry>
-        <inputEntry id="rule_r8_in_2"><text>-</text></inputEntry>
-        <inputEntry id="rule_r8_in_3"><text>true</text></inputEntry>
-        <outputEntry id="rule_r8_out_1"><text>"AI_SERVICE"</text></outputEntry>
-        <outputEntry id="rule_r8_out_2"><text>"/api/ai-engine"</text></outputEntry>
-        <outputEntry id="rule_r8_out_3"><text>"automated_analysis,read_student_data,write_analytics"</text></outputEntry>
-        <outputEntry id="rule_r8_out_4"><text>true</text></outputEntry>
+        <inputEntry id="rule_r8_in_1">
+          <text>"ai_service"</text>
+        </inputEntry>
+        <inputEntry id="rule_r8_in_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_r8_in_3">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="rule_r8_out_1">
+          <text>"AI_SERVICE"</text>
+        </outputEntry>
+        <outputEntry id="rule_r8_out_2">
+          <text>"/api/ai-engine"</text>
+        </outputEntry>
+        <outputEntry id="rule_r8_out_3">
+          <text>"automated_analysis,read_student_data,write_analytics"</text>
+        </outputEntry>
+        <outputEntry id="rule_r8_out_4">
+          <text>true</text>
+        </outputEntry>
       </rule>
-
-      <!-- LLM SERVICE ACCOUNT -->
       <rule id="rule_r9">
         <description>LLM Service automated account</description>
-        <inputEntry id="rule_r9_in_1"><text>"llm_service"</text></inputEntry>
-        <inputEntry id="rule_r9_in_2"><text>-</text></inputEntry>
-        <inputEntry id="rule_r9_in_3"><text>true</text></inputEntry>
-        <outputEntry id="rule_r9_out_1"><text>"LLM_SERVICE"</text></outputEntry>
-        <outputEntry id="rule_r9_out_2"><text>"/api/llm-tutor"</text></outputEntry>
-        <outputEntry id="rule_r9_out_3"><text>"content_generation,quiz_generation,explanation_generation"</text></outputEntry>
-        <outputEntry id="rule_r9_out_4"><text>true</text></outputEntry>
+        <inputEntry id="rule_r9_in_1">
+          <text>"llm_service"</text>
+        </inputEntry>
+        <inputEntry id="rule_r9_in_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_r9_in_3">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="rule_r9_out_1">
+          <text>"LLM_SERVICE"</text>
+        </outputEntry>
+        <outputEntry id="rule_r9_out_2">
+          <text>"/api/llm-tutor"</text>
+        </outputEntry>
+        <outputEntry id="rule_r9_out_3">
+          <text>"content_generation,quiz_generation,explanation_generation"</text>
+        </outputEntry>
+        <outputEntry id="rule_r9_out_4">
+          <text>true</text>
+        </outputEntry>
       </rule>
-
-      <!-- DEFAULT - GUEST -->
       <rule id="rule_r10">
         <description>Unknown user type - guest access</description>
-        <inputEntry id="rule_r10_in_1"><text>-</text></inputEntry>
-        <inputEntry id="rule_r10_in_2"><text>-</text></inputEntry>
-        <inputEntry id="rule_r10_in_3"><text>true</text></inputEntry>
-        <outputEntry id="rule_r10_out_1"><text>"GUEST"</text></outputEntry>
-        <outputEntry id="rule_r10_out_2"><text>"/guest/welcome"</text></outputEntry>
-        <outputEntry id="rule_r10_out_3"><text>"view_public_content"</text></outputEntry>
-        <outputEntry id="rule_r10_out_4"><text>true</text></outputEntry>
+        <inputEntry id="rule_r10_in_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_r10_in_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_r10_in_3">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="rule_r10_out_1">
+          <text>"GUEST"</text>
+        </outputEntry>
+        <outputEntry id="rule_r10_out_2">
+          <text>"/guest/welcome"</text>
+        </outputEntry>
+        <outputEntry id="rule_r10_out_3">
+          <text>"view_public_content"</text>
+        </outputEntry>
+        <outputEntry id="rule_r10_out_4">
+          <text>true</text>
+        </outputEntry>
+      </rule>
+      <rule id="DecisionRule_09edr1r">
+        <inputEntry id="UnaryTests_1390zvf">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_0k7ob7c">
+          <text></text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_1c8v19t">
+          <text></text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_0svocz5">
+          <text></text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_091sbbm">
+          <text></text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_0fx2qz9">
+          <text></text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_0y5wdoi">
+          <text></text>
+        </outputEntry>
       </rule>
     </decisionTable>
   </decision>
   <dmndi:DMNDI>
     <dmndi:DMNDiagram id="DMNDiagram_3">
       <dmndi:DMNShape id="DMNShape_RoleAssignment" dmnElementRef="RoleAssignmentDecision">
-        <dc:Bounds height="80" width="180" x="160" y="100"/>
+        <dc:Bounds height="80" width="180" x="160" y="100" />
       </dmndi:DMNShape>
     </dmndi:DMNDiagram>
   </dmndi:DMNDI>
