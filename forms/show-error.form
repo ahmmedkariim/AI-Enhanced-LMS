@@ -19,7 +19,7 @@
     },
     {
       "type": "text",
-      "text": "**Demo credentials:**\n- Student: `ahmed` / `password123`\n- Instructor: `dr_sara` / `password123`\n- Admin: `system_admin` / `admin456`",
+      "text": "**Demo credentials:**\n- Student: `ahmed` / `Password123!`\n- Instructor: `dr-sara` / `Password123!`\n- Admin: `system-admin` / `Admin456!`",
       "id": "text-hint"
     }
   ]

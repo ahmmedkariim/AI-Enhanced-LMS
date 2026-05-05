@@ -84,8 +84,8 @@ The Python workers must subscribe to these topics:
 2. Open Tasklist: http://localhost:8080/camunda/app/tasklist/
 3. Click **Start process** → Select "Authentication and Role Assignment"
 4. Complete the **Enter Credentials** form:
-   - Username: `john_doe`
-   - Password: `secret123`
+   - Username: `john-doe`
+   - Password: `Password123!`
    - User Type: `student`
    - Email Domain: `student.lms.edu`
 5. Click **Complete**
@@ -122,7 +122,7 @@ When you need the workers to handle these BPMN diagrams, this is the variable co
 ```python
 # Variables the worker receives
 {
-    "username": "john_doe",
+    "username": "john-doe",
     "password": "secret123",
     "userType": "student",
     "emailDomain": "student.lms.edu"

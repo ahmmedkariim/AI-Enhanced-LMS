@@ -104,7 +104,7 @@ What to capture:
 **How:**
 1. In Tasklist, click "Enter Credentials" task
 2. The embedded form appears on the right
-3. Fill in: username=john_doe, password=password123
+3. Fill in: username=john-doe, password=Password123!
 
 What to capture:
 - Form with all fields filled in
@@ -208,12 +208,13 @@ AI-Enhanced-LMS-Submission/
 
 | Username | Password | Role | Email |
 |---|---|---|---|
-| ahmed | password123 | Student | ahmed@student.lms.edu |
-| john_doe | password123 | Student | john.doe@student.lms.edu |
-| jane_smith | password123 | Student | jane.smith@student.lms.edu |
-| ahmed_ali | password123 | Student | ahmed.ali@student.lms.edu |
-| dr_sara | password123 | Instructor | sara@faculty.lms.edu |
-| system_admin | admin456 | Admin | admin@admin.lms.edu |
+| ahmed | Password123! | Student | ahmed@student.lms.edu |
+| john-doe | Password123! | Student | john.doe@student.lms.edu |
+| jane-smith | Password123! | Student | jane.smith@student.lms.edu |
+| ahmed-ali | Password123! | Student | ahmed.ali@student.lms.edu |
+| dr-sara | Password123! | Instructor | sara@faculty.lms.edu |
+| prof-hassan | Password123! | Instructor | hassan@faculty.lms.edu |
+| system-admin | Admin456! | Admin | admin@admin.lms.edu |
 
 ---
 

@@ -126,13 +126,13 @@ def _seed_mock_users(cur, conn):
         return
 
     mock_users = [
-        ("student-001", "john_doe",      "password123", "john.doe@student.lms.edu",   "student",    "student.lms.edu"),
-        ("student-002", "jane_smith",    "password123", "jane.smith@student.lms.edu", "student",    "student.lms.edu"),
-        ("student-003", "ahmed_ali",     "password123", "ahmed.ali@student.lms.edu",  "student",    "student.lms.edu"),
-        ("student-004", "ahmed",         "password123", "ahmed@student.lms.edu",       "student",    "student.lms.edu"),
-        ("inst-001",    "dr_sara",       "password123", "sara@faculty.lms.edu",        "instructor", "faculty.lms.edu"),
-        ("inst-002",    "prof_hassan",   "password123", "hassan@faculty.lms.edu",      "instructor", "faculty.lms.edu"),
-        ("admin-001",   "system_admin",  "admin456",    "admin@admin.lms.edu",         "admin",      "admin.lms.edu"),
+        ("student-001", "john-doe",      "Password123!", "john.doe@student.lms.edu",   "student",    "student.lms.edu"),
+        ("student-002", "jane-smith",    "Password123!", "jane.smith@student.lms.edu", "student",    "student.lms.edu"),
+        ("student-003", "ahmed-ali",     "Password123!", "ahmed.ali@student.lms.edu",  "student",    "student.lms.edu"),
+        ("student-004", "ahmed",         "Password123!", "ahmed@student.lms.edu",       "student",    "student.lms.edu"),
+        ("inst-001",    "dr-sara",       "Password123!", "sara@faculty.lms.edu",        "instructor", "faculty.lms.edu"),
+        ("inst-002",    "prof-hassan",   "Password123!", "hassan@faculty.lms.edu",      "instructor", "faculty.lms.edu"),
+        ("admin-001",   "system-admin",  "Admin456!",    "admin@admin.lms.edu",         "admin",      "admin.lms.edu"),
     ]
     cur.executemany(
         "INSERT OR IGNORE INTO users (id, username, password, email, user_type, email_domain) VALUES (?,?,?,?,?,?)",

@@ -57,6 +57,7 @@ An **executable BPMN-based Learning Management System** featuring adaptive learn
 | 7 | **Deploy Script** | `deploy.py` | ✅ Auto-deploys everything |
 | 8 | **E2E Tests** | `test_e2e.py` | ✅ 4 process tests |
 | 9 | **Demo Runner** | `demo_runner.py` | ✅ Interactive live demo |
+| 10 | **Camunda User Setup** | `setup_camunda_users.py` | ✅ Creates 7 users + 3 groups |
 
 ---
 
@@ -124,7 +125,7 @@ An **executable BPMN-based Learning Management System** featuring adaptive learn
 
 ---
 
-## 🚀 Quick Start (4 Steps)
+## 🚀 Quick Start (5 Steps)
 
 ### Prerequisites
 - Java 17+ (for Camunda engine)
@@ -150,7 +151,8 @@ cd ~/camunda-run
 Wait for the Spring Boot banner, then open:
 - **Cockpit** → http://localhost:8080/camunda/app/cockpit/
 - **Tasklist** → http://localhost:8080/camunda/app/tasklist/
-- Default login: `demo` / `demo`
+- Default admin login: `demo` / `demo`
+- LMS user logins are created by `python setup_camunda_users.py` (see Mock Users below)
 
 ---
 
@@ -190,7 +192,19 @@ Expected output:
 
 ---
 
-### Step 4 — Start Workers
+### Step 4 — Create Camunda Users (one-time)
+
+```bash
+python setup_camunda_users.py
+```
+
+This creates 7 LMS users + 3 groups (`students`, `instructors`, `admins`) and grants Tasklist/Cockpit access. Re-runs are idempotent.
+
+> **Note:** Camunda's default resource ID validator rejects underscores, so user IDs use **hyphens** (e.g. `john-doe`, `dr-sara`). Passwords meet the default policy (≥10 chars, upper/lower/digit/special).
+
+---
+
+### Step 5 — Start Workers
 
 Open a **second terminal**:
 ```bash
@@ -271,14 +285,19 @@ AI-Enhanced-LMS/
 
 ## 👥 Mock Users
 
-| Username | Password | Role |
-|---|---|---|
-| `ahmed` | `password123` | Student |
-| `john_doe` | `password123` | Student |
-| `jane_smith` | `password123` | Student |
-| `ahmed_ali` | `password123` | Student |
-| `dr_sara` | `password123` | Instructor |
-| `system_admin` | `admin456` | Admin |
+Created by `python setup_camunda_users.py` (and seeded into the LMS DB by the workers on first run).
+
+| Username | Password | Role | Group |
+|---|---|---|---|
+| `ahmed` | `Password123!` | Student | `students` |
+| `john-doe` | `Password123!` | Student | `students` |
+| `jane-smith` | `Password123!` | Student | `students` |
+| `ahmed-ali` | `Password123!` | Student | `students` |
+| `dr-sara` | `Password123!` | Instructor | `instructors` |
+| `prof-hassan` | `Password123!` | Instructor | `instructors` |
+| `system-admin` | `Admin456!` | Admin | `admins` |
+
+> **Why hyphens?** Camunda's default `GeneralResourceWhitelistPattern` doesn't allow underscores in user/group IDs. The same hyphenated IDs are used for both Camunda authentication and the LMS internal DB (`workers/database.py`).
 
 ---
 
@@ -288,7 +307,7 @@ AI-Enhanced-LMS/
 1.  python deploy.py            Deploy 4 DMN + 6 BPMN to Camunda
 2.  python -m workers.main      Start 6 Python workers (keep open)
 3.  Tasklist → Start process    Pick "Authentication and Role Assignment"
-4.  Fill form                   username: ahmed | password: password123
+4.  Fill form                   username: ahmed | password: Password123!
 5.  Watch terminal              Worker validates → DMN assigns STUDENT role
 6.  Cockpit                     See highlighted process path (green = done)
 7.  Tasklist → Start process    Pick "Gamification and Reward Process"
@@ -315,6 +334,9 @@ AI-Enhanced-LMS/
 |---|---|
 | Workers crash immediately | Run `python diagnose.py` — pinpoints the exact issue |
 | `Login failed` for your user | Delete `data/lms.db` and restart workers (re-seeds DB) |
+| Camunda rejects user ID (`invalid id`) | Use hyphens, not underscores — `john-doe`, not `john_doe` |
+| Camunda rejects password | Default policy requires ≥10 chars + upper + lower + digit + special |
+| `${initiator}` cannot be resolved | Add `camunda:initiator="initiator"` to the start event |
 | No tasks in Tasklist | Run `python deploy.py` first |
 | DMN not found error | `deploy.py` deploys DMN before BPMN — always use it |
 | `NoneType get_task` error | All `task.complete()` calls need `return` before them |

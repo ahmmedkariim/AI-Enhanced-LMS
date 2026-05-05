@@ -1,14 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
-             xmlns:camunda="http://camunda.org/schema/1.0/dmn"
-             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
-             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
-             xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/"
-             id="learning_path_definitions"
-             name="Learning Path Decision"
-             namespace="http://camunda.org/schema/1.0/dmn"
-             exporter="Camunda Modeler"
-             exporterVersion="5.21.0">
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:camunda="http://camunda.org/schema/1.0/dmn" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" id="learning_path_definitions" name="Learning Path Decision" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.45.0">
   <decision id="LearningPathDecision" name="Learning Path Decision" camunda:historyTimeToLive="180">
     <decisionTable id="DecisionTable_LearningPath" hitPolicy="FIRST">
       <input id="input_quizScore" label="Quiz Score" camunda:inputVariable="quizScore">
@@ -35,131 +26,253 @@
           <text>"High","Medium","Low"</text>
         </inputValues>
       </input>
-      <output id="output_path" label="Next Learning Path" name="nextLearningPath" typeRef="string"/>
-
-      <!-- HIGH SCORE RULES -->
+      <output id="output_path" label="Next Learning Path" name="nextLearningPath" typeRef="string" />
       <rule id="rule_1">
         <description>High performer with visual style</description>
-        <inputEntry id="rule_1_in_1"><text>"High"</text></inputEntry>
-        <inputEntry id="rule_1_in_2"><text>"Visual"</text></inputEntry>
-        <inputEntry id="rule_1_in_3"><text>"High"</text></inputEntry>
-        <outputEntry id="rule_1_out"><text>"Advanced Visual Content with Interactive Diagrams"</text></outputEntry>
+        <inputEntry id="rule_1_in_1">
+          <text>"High"</text>
+        </inputEntry>
+        <inputEntry id="rule_1_in_2">
+          <text>"Visual"</text>
+        </inputEntry>
+        <inputEntry id="rule_1_in_3">
+          <text>"High"</text>
+        </inputEntry>
+        <outputEntry id="rule_1_out">
+          <text>"Advanced Visual Content with Interactive Diagrams"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_2">
         <description>High performer with auditory style</description>
-        <inputEntry id="rule_2_in_1"><text>"High"</text></inputEntry>
-        <inputEntry id="rule_2_in_2"><text>"Auditory"</text></inputEntry>
-        <inputEntry id="rule_2_in_3"><text>"High"</text></inputEntry>
-        <outputEntry id="rule_2_out"><text>"Advanced Audio Lectures and Expert Podcasts"</text></outputEntry>
+        <inputEntry id="rule_2_in_1">
+          <text>"High"</text>
+        </inputEntry>
+        <inputEntry id="rule_2_in_2">
+          <text>"Auditory"</text>
+        </inputEntry>
+        <inputEntry id="rule_2_in_3">
+          <text>"High"</text>
+        </inputEntry>
+        <outputEntry id="rule_2_out">
+          <text>"Advanced Audio Lectures and Expert Podcasts"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_3">
         <description>High performer who learns by doing</description>
-        <inputEntry id="rule_3_in_1"><text>"High"</text></inputEntry>
-        <inputEntry id="rule_3_in_2"><text>"Active"</text></inputEntry>
-        <inputEntry id="rule_3_in_3"><text>"High"</text></inputEntry>
-        <outputEntry id="rule_3_out"><text>"Hands-on Project Challenges and Case Studies"</text></outputEntry>
+        <inputEntry id="rule_3_in_1">
+          <text>"High"</text>
+        </inputEntry>
+        <inputEntry id="rule_3_in_2">
+          <text>"Active"</text>
+        </inputEntry>
+        <inputEntry id="rule_3_in_3">
+          <text>"High"</text>
+        </inputEntry>
+        <outputEntry id="rule_3_out">
+          <text>"Hands-on Project Challenges and Case Studies"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_4">
         <description>High performer who reflects deeply</description>
-        <inputEntry id="rule_4_in_1"><text>"High"</text></inputEntry>
-        <inputEntry id="rule_4_in_2"><text>"Reflective"</text></inputEntry>
-        <inputEntry id="rule_4_in_3"><text>"High"</text></inputEntry>
-        <outputEntry id="rule_4_out"><text>"Research Papers and In-Depth Analysis Tasks"</text></outputEntry>
+        <inputEntry id="rule_4_in_1">
+          <text>"High"</text>
+        </inputEntry>
+        <inputEntry id="rule_4_in_2">
+          <text>"Reflective"</text>
+        </inputEntry>
+        <inputEntry id="rule_4_in_3">
+          <text>"High"</text>
+        </inputEntry>
+        <outputEntry id="rule_4_out">
+          <text>"Research Papers and In-Depth Analysis Tasks"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_5">
         <description>High performer with reading preference</description>
-        <inputEntry id="rule_5_in_1"><text>"High"</text></inputEntry>
-        <inputEntry id="rule_5_in_2"><text>"Reading"</text></inputEntry>
-        <inputEntry id="rule_5_in_3"><text>"High"</text></inputEntry>
-        <outputEntry id="rule_5_out"><text>"Advanced Reading Materials and Articles"</text></outputEntry>
+        <inputEntry id="rule_5_in_1">
+          <text>"High"</text>
+        </inputEntry>
+        <inputEntry id="rule_5_in_2">
+          <text>"Reading"</text>
+        </inputEntry>
+        <inputEntry id="rule_5_in_3">
+          <text>"High"</text>
+        </inputEntry>
+        <outputEntry id="rule_5_out">
+          <text>"Advanced Reading Materials and Articles"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_6">
         <description>High performer kinesthetic learner</description>
-        <inputEntry id="rule_6_in_1"><text>"High"</text></inputEntry>
-        <inputEntry id="rule_6_in_2"><text>"Kinesthetic"</text></inputEntry>
-        <inputEntry id="rule_6_in_3"><text>"High"</text></inputEntry>
-        <outputEntry id="rule_6_out"><text>"Lab Simulations and Practical Workshops"</text></outputEntry>
+        <inputEntry id="rule_6_in_1">
+          <text>"High"</text>
+        </inputEntry>
+        <inputEntry id="rule_6_in_2">
+          <text>"Kinesthetic"</text>
+        </inputEntry>
+        <inputEntry id="rule_6_in_3">
+          <text>"High"</text>
+        </inputEntry>
+        <outputEntry id="rule_6_out">
+          <text>"Lab Simulations and Practical Workshops"</text>
+        </outputEntry>
       </rule>
-
-      <!-- MEDIUM SCORE RULES -->
       <rule id="rule_7">
         <description>Medium performer with visual style</description>
-        <inputEntry id="rule_7_in_1"><text>"Medium"</text></inputEntry>
-        <inputEntry id="rule_7_in_2"><text>"Visual"</text></inputEntry>
-        <inputEntry id="rule_7_in_3"><text>"High","Medium"</text></inputEntry>
-        <outputEntry id="rule_7_out"><text>"Standard Visual Tutorials with Guided Examples"</text></outputEntry>
+        <inputEntry id="rule_7_in_1">
+          <text>"Medium"</text>
+        </inputEntry>
+        <inputEntry id="rule_7_in_2">
+          <text>"Visual"</text>
+        </inputEntry>
+        <inputEntry id="rule_7_in_3">
+          <text>"High","Medium"</text>
+        </inputEntry>
+        <outputEntry id="rule_7_out">
+          <text>"Standard Visual Tutorials with Guided Examples"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_8">
         <description>Medium performer who is active</description>
-        <inputEntry id="rule_8_in_1"><text>"Medium"</text></inputEntry>
-        <inputEntry id="rule_8_in_2"><text>"Active"</text></inputEntry>
-        <inputEntry id="rule_8_in_3"><text>"High"</text></inputEntry>
-        <outputEntry id="rule_8_out"><text>"Practice Exercises with Solved Examples"</text></outputEntry>
+        <inputEntry id="rule_8_in_1">
+          <text>"Medium"</text>
+        </inputEntry>
+        <inputEntry id="rule_8_in_2">
+          <text>"Active"</text>
+        </inputEntry>
+        <inputEntry id="rule_8_in_3">
+          <text>"High"</text>
+        </inputEntry>
+        <outputEntry id="rule_8_out">
+          <text>"Practice Exercises with Solved Examples"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_9">
         <description>Medium performer who reflects</description>
-        <inputEntry id="rule_9_in_1"><text>"Medium"</text></inputEntry>
-        <inputEntry id="rule_9_in_2"><text>"Reflective"</text></inputEntry>
-        <inputEntry id="rule_9_in_3"><text>"Medium","High"</text></inputEntry>
-        <outputEntry id="rule_9_out"><text>"Guided Reading with Reflection Worksheets"</text></outputEntry>
+        <inputEntry id="rule_9_in_1">
+          <text>"Medium"</text>
+        </inputEntry>
+        <inputEntry id="rule_9_in_2">
+          <text>"Reflective"</text>
+        </inputEntry>
+        <inputEntry id="rule_9_in_3">
+          <text>"Medium","High"</text>
+        </inputEntry>
+        <outputEntry id="rule_9_out">
+          <text>"Guided Reading with Reflection Worksheets"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_10">
         <description>Medium performer with low engagement - boost with gamification</description>
-        <inputEntry id="rule_10_in_1"><text>"Medium"</text></inputEntry>
-        <inputEntry id="rule_10_in_2"><text>-</text></inputEntry>
-        <inputEntry id="rule_10_in_3"><text>"Low"</text></inputEntry>
-        <outputEntry id="rule_10_out"><text>"Gamified Learning Modules to Boost Engagement"</text></outputEntry>
+        <inputEntry id="rule_10_in_1">
+          <text>"Medium"</text>
+        </inputEntry>
+        <inputEntry id="rule_10_in_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_10_in_3">
+          <text>"Low"</text>
+        </inputEntry>
+        <outputEntry id="rule_10_out">
+          <text>"Gamified Learning Modules to Boost Engagement"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_11">
         <description>Medium score - default standard path</description>
-        <inputEntry id="rule_11_in_1"><text>"Medium"</text></inputEntry>
-        <inputEntry id="rule_11_in_2"><text>-</text></inputEntry>
-        <inputEntry id="rule_11_in_3"><text>-</text></inputEntry>
-        <outputEntry id="rule_11_out"><text>"Standard Learning Path with Mixed Media"</text></outputEntry>
+        <inputEntry id="rule_11_in_1">
+          <text>"Medium"</text>
+        </inputEntry>
+        <inputEntry id="rule_11_in_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_11_in_3">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="rule_11_out">
+          <text>"Standard Learning Path with Mixed Media"</text>
+        </outputEntry>
       </rule>
-
-      <!-- LOW SCORE RULES (Remedial) -->
       <rule id="rule_12">
         <description>Low performer with visual style</description>
-        <inputEntry id="rule_12_in_1"><text>"Low"</text></inputEntry>
-        <inputEntry id="rule_12_in_2"><text>"Visual"</text></inputEntry>
-        <inputEntry id="rule_12_in_3"><text>-</text></inputEntry>
-        <outputEntry id="rule_12_out"><text>"Basic Visual Walkthroughs with Step-by-Step Diagrams"</text></outputEntry>
+        <inputEntry id="rule_12_in_1">
+          <text>"Low"</text>
+        </inputEntry>
+        <inputEntry id="rule_12_in_2">
+          <text>"Visual"</text>
+        </inputEntry>
+        <inputEntry id="rule_12_in_3">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="rule_12_out">
+          <text>"Basic Visual Walkthroughs with Step-by-Step Diagrams"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_13">
         <description>Low performer who is active</description>
-        <inputEntry id="rule_13_in_1"><text>"Low"</text></inputEntry>
-        <inputEntry id="rule_13_in_2"><text>"Active"</text></inputEntry>
-        <inputEntry id="rule_13_in_3"><text>-</text></inputEntry>
-        <outputEntry id="rule_13_out"><text>"Interactive Practice with Real-time Hints"</text></outputEntry>
+        <inputEntry id="rule_13_in_1">
+          <text>"Low"</text>
+        </inputEntry>
+        <inputEntry id="rule_13_in_2">
+          <text>"Active"</text>
+        </inputEntry>
+        <inputEntry id="rule_13_in_3">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="rule_13_out">
+          <text>"Interactive Practice with Real-time Hints"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_14">
         <description>Low performer with low engagement - critical intervention</description>
-        <inputEntry id="rule_14_in_1"><text>"Low"</text></inputEntry>
-        <inputEntry id="rule_14_in_2"><text>-</text></inputEntry>
-        <inputEntry id="rule_14_in_3"><text>"Low"</text></inputEntry>
-        <outputEntry id="rule_14_out"><text>"Remedial Content with One-on-One LLM Tutor Sessions"</text></outputEntry>
+        <inputEntry id="rule_14_in_1">
+          <text>"Low"</text>
+        </inputEntry>
+        <inputEntry id="rule_14_in_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_14_in_3">
+          <text>"Low"</text>
+        </inputEntry>
+        <outputEntry id="rule_14_out">
+          <text>"Remedial Content with One-on-One LLM Tutor Sessions"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_15">
         <description>Default fallback for low score</description>
-        <inputEntry id="rule_15_in_1"><text>"Low"</text></inputEntry>
-        <inputEntry id="rule_15_in_2"><text>-</text></inputEntry>
-        <inputEntry id="rule_15_in_3"><text>-</text></inputEntry>
-        <outputEntry id="rule_15_out"><text>"Foundational Remedial Content with Basic Tutorials"</text></outputEntry>
+        <inputEntry id="rule_15_in_1">
+          <text>"Low"</text>
+        </inputEntry>
+        <inputEntry id="rule_15_in_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_15_in_3">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="rule_15_out">
+          <text>"Foundational Remedial Content with Basic Tutorials"</text>
+        </outputEntry>
       </rule>
       <rule id="rule_16">
         <description>Catch-all default</description>
-        <inputEntry id="rule_16_in_1"><text>-</text></inputEntry>
-        <inputEntry id="rule_16_in_2"><text>-</text></inputEntry>
-        <inputEntry id="rule_16_in_3"><text>-</text></inputEntry>
-        <outputEntry id="rule_16_out"><text>"Standard Learning Path"</text></outputEntry>
+        <inputEntry id="rule_16_in_1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_16_in_2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule_16_in_3">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="rule_16_out">
+          <text>"Standard Learning Path"</text>
+        </outputEntry>
       </rule>
     </decisionTable>
   </decision>
   <dmndi:DMNDI>
     <dmndi:DMNDiagram id="DMNDiagram_1">
       <dmndi:DMNShape id="DMNShape_LearningPath" dmnElementRef="LearningPathDecision">
-        <dc:Bounds height="80" width="180" x="160" y="100"/>
+        <dc:Bounds height="80" width="180" x="160" y="100" />
       </dmndi:DMNShape>
     </dmndi:DMNDiagram>
   </dmndi:DMNDI>
