@@ -119,21 +119,9 @@
     </bpmn:inclusiveGateway>
 
     <!-- Student accesses learning materials -->
-    <bpmn:userTask id="Task_AL_AccessMaterials" name="Access Learning Materials" camunda:assignee="${initiator}">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="nextLearningPath" label="Your Learning Path" type="string">
-            <camunda:properties><camunda:property id="readonly" value="true"/></camunda:properties>
-          </camunda:formField>
-          <camunda:formField id="activityCompleted" label="Have you completed this activity?" type="boolean" defaultValue="false"/>
-          <camunda:formField id="activityType" label="Activity Type" type="enum">
-            <camunda:value id="Quiz" name="Quiz"/>
-            <camunda:value id="Reading" name="Reading"/>
-            <camunda:value id="Video" name="Video"/>
-            <camunda:value id="Exercise" name="Exercise"/>
-          </camunda:formField>
-        </camunda:formData>
-      </bpmn:extensionElements>
+    <bpmn:userTask id="Task_AL_AccessMaterials" name="Access Learning Materials"
+                   camunda:assignee="${initiator}"
+                   camunda:formKey="camunda-forms:deployment:access-learning-materials.form">
       <bpmn:incoming>F_AL_15</bpmn:incoming>
       <bpmn:outgoing>F_AL_16</bpmn:outgoing>
     </bpmn:userTask>

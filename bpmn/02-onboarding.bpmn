@@ -38,31 +38,9 @@
       <bpmn:outgoing>F_OB_01</bpmn:outgoing>
     </bpmn:startEvent>
 
-    <bpmn:userTask id="Task_OB_SubmitGoals" name="Submit Learning Goals and Preferences" camunda:assignee="${initiator}">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="learningGoals" label="What are your learning goals?" type="string">
-            <camunda:validation><camunda:constraint name="required"/></camunda:validation>
-          </camunda:formField>
-          <camunda:formField id="subjectAreas" label="Subject areas of interest" type="string">
-            <camunda:validation><camunda:constraint name="required"/></camunda:validation>
-          </camunda:formField>
-          <camunda:formField id="learningStyle" label="Preferred learning style" type="enum">
-            <camunda:value id="Visual" name="Visual"/>
-            <camunda:value id="Auditory" name="Auditory"/>
-            <camunda:value id="Reading" name="Reading/Writing"/>
-            <camunda:value id="Kinesthetic" name="Kinesthetic"/>
-            <camunda:value id="Active" name="Active"/>
-            <camunda:value id="Reflective" name="Reflective"/>
-          </camunda:formField>
-          <camunda:formField id="weeklyHours" label="Study hours available per week" type="long" defaultValue="5"/>
-          <camunda:formField id="experienceLevel" label="Current experience level" type="enum">
-            <camunda:value id="Beginner" name="Beginner"/>
-            <camunda:value id="Intermediate" name="Intermediate"/>
-            <camunda:value id="Advanced" name="Advanced"/>
-          </camunda:formField>
-        </camunda:formData>
-      </bpmn:extensionElements>
+    <bpmn:userTask id="Task_OB_SubmitGoals" name="Submit Learning Goals and Preferences"
+                   camunda:assignee="${initiator}"
+                   camunda:formKey="camunda-forms:deployment:submit-learning-goals.form">
       <bpmn:incoming>F_OB_01</bpmn:incoming>
       <bpmn:outgoing>F_OB_02</bpmn:outgoing>
     </bpmn:userTask>
@@ -134,18 +112,9 @@
       <bpmn:outgoing>F_OB_16</bpmn:outgoing>
     </bpmn:inclusiveGateway>
 
-    <bpmn:userTask id="Task_OB_ReviewProfile" name="Review Personalized Learning Profile" camunda:assignee="${initiator}">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="assignedPath" label="Your Assigned Learning Path" type="string">
-            <camunda:properties><camunda:property id="readonly" value="true"/></camunda:properties>
-          </camunda:formField>
-          <camunda:formField id="recommendedResources" label="Recommended Resources" type="string">
-            <camunda:properties><camunda:property id="readonly" value="true"/></camunda:properties>
-          </camunda:formField>
-          <camunda:formField id="profileApproved" label="I accept this learning profile" type="boolean" defaultValue="true"/>
-        </camunda:formData>
-      </bpmn:extensionElements>
+    <bpmn:userTask id="Task_OB_ReviewProfile" name="Review Personalized Learning Profile"
+                   camunda:assignee="${initiator}"
+                   camunda:formKey="camunda-forms:deployment:review-profile.form">
       <bpmn:incoming>F_OB_16</bpmn:incoming>
       <bpmn:outgoing>F_OB_17</bpmn:outgoing>
     </bpmn:userTask>

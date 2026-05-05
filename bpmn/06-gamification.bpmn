@@ -175,17 +175,9 @@
     </bpmn:serviceTask>
 
     <!-- Student views their earned reward in the UI -->
-    <bpmn:userTask id="GM_Task_ViewAchievement" name="View Achievement" camunda:assignee="${initiator}">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="rewardViewed" label="Reward acknowledged?" type="boolean" defaultValue="true" />
-          <camunda:formField id="studentReaction" label="React to your reward (optional)" type="enum">
-            <camunda:value id="excited" name="Excited!" />
-            <camunda:value id="motivated" name="Motivated to learn more" />
-            <camunda:value id="neutral" name="Acknowledged" />
-          </camunda:formField>
-        </camunda:formData>
-      </bpmn:extensionElements>
+    <bpmn:userTask id="GM_Task_ViewAchievement" name="View Achievement"
+                   camunda:assignee="${initiator}"
+                   camunda:formKey="camunda-forms:deployment:view-achievement.form">
       <bpmn:incoming>GM_Flow_05</bpmn:incoming>
       <bpmn:outgoing>GM_Flow_06</bpmn:outgoing>
     </bpmn:userTask>

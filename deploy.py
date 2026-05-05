@@ -1,18 +1,21 @@
 """
-deploy.py — Auto-deploy all DMN and BPMN files to Camunda Platform 7
+deploy.py — Auto-deploy all DMN, BPMN, and Camunda Forms to Camunda Platform 7
 
 Run ONCE before starting workers or tests:
     python deploy.py
 
 This script:
-  1. Deploys all 4 DMN files first (BPMN references them)
-  2. Deploys all 6 BPMN files
+  1. Deploys all DMN files first (BPMN references them)
+  2. Deploys each BPMN file together with its referenced .form files in a
+     single deployment, so that camunda:formKey values of the form
+     "camunda-forms:deployment:<file>.form" resolve correctly
   3. Verifies each deployment succeeded
   4. Prints a summary
 """
 import os
 import sys
 import glob
+from typing import List, Optional
 import requests
 from datetime import datetime
 
@@ -59,37 +62,57 @@ def check_camunda():
     return False
 
 
-def deploy_file(filepath: str, deployment_name: str) -> dict:
-    """Deploy a single .bpmn or .dmn file to Camunda."""
+def deploy_file(filepath: str, deployment_name: str, extra_files: Optional[List[str]] = None) -> dict:
+    """Deploy a .bpmn or .dmn file (optionally bundled with extra resources
+    such as .form files) to Camunda in a single deployment."""
     filename = os.path.basename(filepath)
+    extra_files = extra_files or []
+    open_handles = []
     try:
-        with open(filepath, "rb") as f:
-            files = {filename: (filename, f, "application/octet-stream")}
-            data  = {
-                "deployment-name":        deployment_name,
-                "deployment-source":      "AI-Enhanced LMS Deploy Script",
-                "deploy-changed-only":    "true",
-                "enable-duplicate-filtering": "true",
-            }
-            r = requests.post(
-                f"{CAMUNDA_URL}/deployment/create",
-                auth=AUTH,
-                files=files,
-                data=data,
-                timeout=15
-            )
+        files = {}
+        main_handle = open(filepath, "rb")
+        open_handles.append(main_handle)
+        files[filename] = (filename, main_handle, "application/octet-stream")
+
+        bundled_names = []
+        for extra in extra_files:
+            extra_name = os.path.basename(extra)
+            extra_handle = open(extra, "rb")
+            open_handles.append(extra_handle)
+            files[extra_name] = (extra_name, extra_handle, "application/octet-stream")
+            bundled_names.append(extra_name)
+
+        data = {
+            "deployment-name":        deployment_name,
+            "deployment-source":      "AI-Enhanced LMS Deploy Script",
+            "deploy-changed-only":    "true",
+            "enable-duplicate-filtering": "true",
+        }
+        r = requests.post(
+            f"{CAMUNDA_URL}/deployment/create",
+            auth=AUTH,
+            files=files,
+            data=data,
+            timeout=15
+        )
 
         if r.status_code in (200, 201):
             result = r.json()
             dep_id = result.get("id", "?")
-            return {"success": True, "deployment_id": dep_id, "file": filename}
+            return {"success": True, "deployment_id": dep_id, "file": filename, "bundled": bundled_names}
         else:
-            return {"success": False, "error": f"HTTP {r.status_code}: {r.text[:200]}", "file": filename}
+            return {"success": False, "error": f"HTTP {r.status_code}: {r.text[:200]}", "file": filename, "bundled": bundled_names}
 
-    except FileNotFoundError:
-        return {"success": False, "error": "File not found", "file": filename}
+    except FileNotFoundError as e:
+        return {"success": False, "error": f"File not found: {e.filename}", "file": filename, "bundled": []}
     except Exception as e:
-        return {"success": False, "error": str(e), "file": filename}
+        return {"success": False, "error": str(e), "file": filename, "bundled": []}
+    finally:
+        for h in open_handles:
+            try:
+                h.close()
+            except Exception:
+                pass
 
 
 def verify_deployments():
@@ -165,20 +188,36 @@ def main():
         "06-gamification.bpmn":      "Gamification & Reward Process",
     }
 
+    # Forms bundled with each BPMN. The formKey "camunda-forms:deployment:<file>"
+    # only resolves when the .form is in the SAME deployment as the BPMN.
+    BPMN_FORMS = {
+        "01-authentication.bpmn":    ["enter-credentials.form", "show-error.form"],
+        "02-onboarding.bpmn":        ["submit-learning-goals.form", "review-profile.form"],
+        "03-adaptive-learning.bpmn": ["access-learning-materials.form"],
+        "04-hybrid-classroom.bpmn":  ["start-lecture.form", "live-poll.form",
+                                      "team-challenge.form", "post-lecture-quiz.form"],
+        "05-adaptive-quiz.bpmn":     ["take-adaptive-quiz.form"],
+        "06-gamification.bpmn":      ["view-achievement.form"],
+    }
+
     bpmn_results = []
     for f in bpmn_files:
         fname = os.path.basename(f)
         name  = BPMN_NAMES.get(fname, fname)
-        result = deploy_file(f, f"LMS-BPMN-{name}")
+        form_paths = [os.path.join("forms", form) for form in BPMN_FORMS.get(fname, [])]
+        result = deploy_file(f, f"LMS-BPMN-{name}", extra_files=form_paths)
         bpmn_results.append(result)
         if result["success"]:
-            print(f"  {GREEN}✅ {result['file']:<35}{RESET} → {name}")
+            forms_note = f" {BLUE}(+{len(result['bundled'])} forms){RESET}" if result.get("bundled") else ""
+            print(f"  {GREEN}✅ {result['file']:<35}{RESET} → {name}{forms_note}")
         else:
             print(f"  {RED}❌ {result['file']:<35}{RESET} → {result['error']}")
 
     bpmn_ok   = sum(1 for r in bpmn_results if r["success"])
     bpmn_fail = len(bpmn_results) - bpmn_ok
+    forms_ok  = sum(len(r.get("bundled", [])) for r in bpmn_results if r["success"])
     print(f"\n  BPMN: {GREEN}{bpmn_ok} deployed{RESET}" + (f", {RED}{bpmn_fail} failed{RESET}" if bpmn_fail else ""))
+    print(f"  Forms bundled: {GREEN}{forms_ok}{RESET}")
 
     # ── Verify ────────────────────────────────────────────────
     verify_deployments()

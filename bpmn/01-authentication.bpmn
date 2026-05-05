@@ -39,44 +39,17 @@
       <bpmn:outgoing>Flow_Start_to_EnterCreds</bpmn:outgoing>
     </bpmn:startEvent>
 
-    <bpmn:userTask id="Task_EnterCredentials" name="Enter Credentials" camunda:assignee="${initiator}">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="username" label="Username" type="string" defaultValue="">
-            <camunda:validation>
-              <camunda:constraint name="required" />
-              <camunda:constraint name="minlength" config="3" />
-            </camunda:validation>
-          </camunda:formField>
-          <camunda:formField id="password" label="Password" type="string">
-            <camunda:validation>
-              <camunda:constraint name="required" />
-              <camunda:constraint name="minlength" config="6" />
-            </camunda:validation>
-          </camunda:formField>
-          <camunda:formField id="userType" label="Account Type (student/instructor/admin)" type="string" defaultValue="student">
-            <camunda:validation>
-              <camunda:constraint name="required" />
-            </camunda:validation>
-          </camunda:formField>
-          <camunda:formField id="emailDomain" label="Email Domain" type="string" defaultValue="student.lms.edu" />
-        </camunda:formData>
-      </bpmn:extensionElements>
+    <bpmn:userTask id="Task_EnterCredentials" name="Enter Credentials"
+                   camunda:assignee="${initiator}"
+                   camunda:formKey="camunda-forms:deployment:enter-credentials.form">
       <bpmn:incoming>Flow_Start_to_EnterCreds</bpmn:incoming>
       <bpmn:incoming>Flow_ShowError_to_EnterCreds</bpmn:incoming>
       <bpmn:outgoing>Flow_EnterCreds_to_Validate</bpmn:outgoing>
     </bpmn:userTask>
 
-    <bpmn:userTask id="Task_ShowError" name="Show Error Message" camunda:assignee="${initiator}">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="errorMessage" label="Error" type="string" defaultValue="Invalid credentials. Please try again.">
-            <camunda:properties>
-              <camunda:property id="readonly" value="true" />
-            </camunda:properties>
-          </camunda:formField>
-        </camunda:formData>
-      </bpmn:extensionElements>
+    <bpmn:userTask id="Task_ShowError" name="Show Error Message"
+                   camunda:assignee="${initiator}"
+                   camunda:formKey="camunda-forms:deployment:show-error.form">
       <bpmn:incoming>Flow_Invalid_to_ShowError</bpmn:incoming>
       <bpmn:outgoing>Flow_ShowError_to_EnterCreds</bpmn:outgoing>
     </bpmn:userTask>

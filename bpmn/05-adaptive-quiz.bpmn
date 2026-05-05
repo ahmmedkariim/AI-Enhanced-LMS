@@ -86,23 +86,9 @@
     </bpmn:parallelGateway>
 
     <!-- Student takes the quiz -->
-    <bpmn:userTask id="Task_AQ_TakeQuiz" name="Take Adaptive Quiz" camunda:assignee="${initiator}">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="nextDifficulty" label="Quiz Difficulty" type="string">
-            <camunda:properties><camunda:property id="readonly" value="true"/></camunda:properties>
-          </camunda:formField>
-          <camunda:formField id="questionCount" label="Number of Questions" type="long">
-            <camunda:properties><camunda:property id="readonly" value="true"/></camunda:properties>
-          </camunda:formField>
-          <camunda:formField id="q1Answer" label="Question 1 Answer" type="string"/>
-          <camunda:formField id="q2Answer" label="Question 2 Answer" type="string"/>
-          <camunda:formField id="q3Answer" label="Question 3 Answer" type="string"/>
-          <camunda:formField id="q4Answer" label="Question 4 Answer" type="string"/>
-          <camunda:formField id="q5Answer" label="Question 5 Answer" type="string"/>
-          <camunda:formField id="timeSpentSeconds" label="Time spent (auto-recorded)" type="long" defaultValue="300"/>
-        </camunda:formData>
-      </bpmn:extensionElements>
+    <bpmn:userTask id="Task_AQ_TakeQuiz" name="Take Adaptive Quiz"
+                   camunda:assignee="${initiator}"
+                   camunda:formKey="camunda-forms:deployment:take-adaptive-quiz.form">
       <bpmn:incoming>F_AQ_09</bpmn:incoming>
       <bpmn:outgoing>F_AQ_10</bpmn:outgoing>
     </bpmn:userTask>

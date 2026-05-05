@@ -56,23 +56,9 @@
       <bpmn:outgoing>F_HC_01</bpmn:outgoing>
     </bpmn:startEvent>
 
-    <bpmn:userTask id="Task_HC_StartLecture" name="Start Lecture Session" camunda:candidateGroups="instructor">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="lectureTitle" label="Lecture Title" type="string">
-            <camunda:validation><camunda:constraint name="required"/></camunda:validation>
-          </camunda:formField>
-          <camunda:formField id="lectureTopics" label="Topics to Cover" type="string">
-            <camunda:validation><camunda:constraint name="required"/></camunda:validation>
-          </camunda:formField>
-          <camunda:formField id="estimatedDuration" label="Estimated Duration (minutes)" type="long" defaultValue="60"/>
-          <camunda:formField id="classroomMode" label="Classroom Mode" type="enum">
-            <camunda:value id="Hybrid" name="Hybrid (Physical + Online)"/>
-            <camunda:value id="Online" name="Fully Online"/>
-            <camunda:value id="Physical" name="Fully Physical"/>
-          </camunda:formField>
-        </camunda:formData>
-      </bpmn:extensionElements>
+    <bpmn:userTask id="Task_HC_StartLecture" name="Start Lecture Session"
+                   camunda:candidateGroups="instructor"
+                   camunda:formKey="camunda-forms:deployment:start-lecture.form">
       <bpmn:incoming>F_HC_01</bpmn:incoming>
       <bpmn:outgoing>F_HC_02</bpmn:outgoing>
     </bpmn:userTask>
@@ -109,38 +95,16 @@
     </bpmn:parallelGateway>
 
     <!-- ===== DURING LECTURE ===== -->
-    <bpmn:userTask id="Task_HC_Poll" name="Participate in Live Poll" camunda:assignee="${initiator}">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="pollQuestion" label="Poll Question" type="string">
-            <camunda:properties><camunda:property id="readonly" value="true"/></camunda:properties>
-          </camunda:formField>
-          <camunda:formField id="pollAnswer" label="Your Answer" type="enum">
-            <camunda:value id="A" name="Option A"/>
-            <camunda:value id="B" name="Option B"/>
-            <camunda:value id="C" name="Option C"/>
-            <camunda:value id="D" name="Option D"/>
-          </camunda:formField>
-        </camunda:formData>
-      </bpmn:extensionElements>
+    <bpmn:userTask id="Task_HC_Poll" name="Participate in Live Poll"
+                   camunda:assignee="${initiator}"
+                   camunda:formKey="camunda-forms:deployment:live-poll.form">
       <bpmn:incoming>F_HC_09</bpmn:incoming>
       <bpmn:outgoing>F_HC_10</bpmn:outgoing>
     </bpmn:userTask>
 
-    <bpmn:userTask id="Task_HC_TeamChallenge" name="Join Team Challenge" camunda:assignee="${initiator}">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="teamName" label="Team Name" type="string"/>
-          <camunda:formField id="challengeResponse" label="Team Challenge Response" type="string">
-            <camunda:validation><camunda:constraint name="required"/></camunda:validation>
-          </camunda:formField>
-          <camunda:formField id="collaborationLevel" label="Collaboration Level" type="enum">
-            <camunda:value id="High" name="High"/>
-            <camunda:value id="Medium" name="Medium"/>
-            <camunda:value id="Low" name="Low"/>
-          </camunda:formField>
-        </camunda:formData>
-      </bpmn:extensionElements>
+    <bpmn:userTask id="Task_HC_TeamChallenge" name="Join Team Challenge"
+                   camunda:assignee="${initiator}"
+                   camunda:formKey="camunda-forms:deployment:team-challenge.form">
       <bpmn:incoming>F_HC_10</bpmn:incoming>
       <bpmn:outgoing>F_HC_11</bpmn:outgoing>
     </bpmn:userTask>
@@ -217,17 +181,9 @@
       <bpmn:outgoing>F_HC_25</bpmn:outgoing>
     </bpmn:serviceTask>
 
-    <bpmn:userTask id="Task_HC_PostLectureQuiz" name="Complete Post-Lecture Quiz" camunda:assignee="${initiator}">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="quizScore" label="Quiz Score (0-100)" type="long"/>
-          <camunda:formField id="quizScoreLevel" label="Score Level" type="enum">
-            <camunda:value id="High" name="High (>=70)"/>
-            <camunda:value id="Medium" name="Medium (40-69)"/>
-            <camunda:value id="Low" name="Low (below 40)"/>
-          </camunda:formField>
-        </camunda:formData>
-      </bpmn:extensionElements>
+    <bpmn:userTask id="Task_HC_PostLectureQuiz" name="Complete Post-Lecture Quiz"
+                   camunda:assignee="${initiator}"
+                   camunda:formKey="camunda-forms:deployment:post-lecture-quiz.form">
       <bpmn:incoming>F_HC_25</bpmn:incoming>
       <bpmn:outgoing>F_HC_26</bpmn:outgoing>
     </bpmn:userTask>
