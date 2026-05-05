@@ -8,7 +8,7 @@ Run ONCE after starting Camunda:
 
 What it creates:
   Groups:  students, instructors, admins
-  Users:   ahmed, john-doe, jane-smith, ahmed-ali, dr-sara, prof-hassan, system-admin
+  Users:   ahmed, johndoe, janesmith, ahmedali, drsara, profhassan, systemadmin
   Assigns: each user to their correct group
 """
 import os
@@ -55,7 +55,7 @@ USERS = [
         "group":      "students",
     },
     {
-        "id":         "john-doe",
+        "id":         "johndoe",
         "firstName":  "John",
         "lastName":   "Doe",
         "email":      "john.doe@student.lms.edu",
@@ -63,7 +63,7 @@ USERS = [
         "group":      "students",
     },
     {
-        "id":         "jane-smith",
+        "id":         "janesmith",
         "firstName":  "Jane",
         "lastName":   "Smith",
         "email":      "jane.smith@student.lms.edu",
@@ -71,7 +71,7 @@ USERS = [
         "group":      "students",
     },
     {
-        "id":         "ahmed-ali",
+        "id":         "ahmedali",
         "firstName":  "Ahmed",
         "lastName":   "Ali",
         "email":      "ahmed.ali@student.lms.edu",
@@ -80,7 +80,7 @@ USERS = [
     },
     # Instructors
     {
-        "id":         "dr-sara",
+        "id":         "drsara",
         "firstName":  "Sara",
         "lastName":   "Elshorbagy",
         "email":      "sara@faculty.lms.edu",
@@ -88,7 +88,7 @@ USERS = [
         "group":      "instructors",
     },
     {
-        "id":         "prof-hassan",
+        "id":         "profhassan",
         "firstName":  "Hassan",
         "lastName":   "Professor",
         "email":      "hassan@faculty.lms.edu",
@@ -97,7 +97,7 @@ USERS = [
     },
     # Admins
     {
-        "id":         "system-admin",
+        "id":         "systemadmin",
         "firstName":  "System",
         "lastName":   "Administrator",
         "email":      "admin@admin.lms.edu",
@@ -220,12 +220,13 @@ def print_login_table():
 ╠══════════╦══════════════╦════════════╦══════════════════════════╣
 ║  Username║  Password    ║  Role      ║  Email                   ║
 ╠══════════╬══════════════╬════════════╬══════════════════════════╣
-║  ahmed   ║  Password123!║  Student   ║  ahmed@student.lms.edu   ║
-║  john-doe║  Password123!║  Student   ║  john.doe@student.lms.edu║
-║  jane-   ║  Password123!║  Student   ║  jane.smith@student...   ║
-║  dr-sara ║  Password123!║  Instructor║  sara@faculty.lms.edu    ║
-║  prof-   ║  Password123!║  Instructor║  hassan@faculty.lms.edu  ║
-║  system- ║  Admin456!   ║  Admin     ║  admin@admin.lms.edu     ║
+║  ahmed       ║  Password123!║  Student   ║  ahmed@student.lms.edu   ║
+║  johndoe     ║  Password123!║  Student   ║  john.doe@student.lms.edu║
+║  janesmith   ║  Password123!║  Student   ║  jane.smith@student...   ║
+║  ahmedali    ║  Password123!║  Student   ║  ahmed.ali@student...    ║
+║  drsara      ║  Password123!║  Instructor║  sara@faculty.lms.edu    ║
+║  profhassan  ║  Password123!║  Instructor║  hassan@faculty.lms.edu  ║
+║  systemadmin ║  Admin456!   ║  Admin     ║  admin@admin.lms.edu     ║
 ╚══════════╩══════════════╩════════════╩══════════════════════════╝{RESET}
 """)
 

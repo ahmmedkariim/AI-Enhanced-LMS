@@ -200,7 +200,7 @@ python setup_camunda_users.py
 
 This creates 7 LMS users + 3 groups (`students`, `instructors`, `admins`) and grants Tasklist/Cockpit access. Re-runs are idempotent.
 
-> **Note:** Camunda's default resource ID validator rejects underscores, so user IDs use **hyphens** (e.g. `john-doe`, `dr-sara`). Passwords meet the default policy (≥10 chars, upper/lower/digit/special).
+> **Note:** Camunda's default resource ID validator rejects both underscores and hyphens, so user IDs are **alphanumeric only** (e.g. `johndoe`, `drsara`). Passwords meet the default policy (≥10 chars, upper/lower/digit/special).
 
 ---
 
@@ -290,14 +290,14 @@ Created by `python setup_camunda_users.py` (and seeded into the LMS DB by the wo
 | Username | Password | Role | Group |
 |---|---|---|---|
 | `ahmed` | `Password123!` | Student | `students` |
-| `john-doe` | `Password123!` | Student | `students` |
-| `jane-smith` | `Password123!` | Student | `students` |
-| `ahmed-ali` | `Password123!` | Student | `students` |
-| `dr-sara` | `Password123!` | Instructor | `instructors` |
-| `prof-hassan` | `Password123!` | Instructor | `instructors` |
-| `system-admin` | `Admin456!` | Admin | `admins` |
+| `johndoe` | `Password123!` | Student | `students` |
+| `janesmith` | `Password123!` | Student | `students` |
+| `ahmedali` | `Password123!` | Student | `students` |
+| `drsara` | `Password123!` | Instructor | `instructors` |
+| `profhassan` | `Password123!` | Instructor | `instructors` |
+| `systemadmin` | `Admin456!` | Admin | `admins` |
 
-> **Why hyphens?** Camunda's default `GeneralResourceWhitelistPattern` doesn't allow underscores in user/group IDs. The same hyphenated IDs are used for both Camunda authentication and the LMS internal DB (`workers/database.py`).
+> **Why no separators?** Camunda's default `GeneralResourceWhitelistPattern` only allows alphanumeric characters in user/group IDs — neither underscores nor hyphens. The same alphanumeric IDs are used for both Camunda authentication and the LMS internal DB (`workers/database.py`).
 
 ---
 
@@ -334,7 +334,7 @@ Created by `python setup_camunda_users.py` (and seeded into the LMS DB by the wo
 |---|---|
 | Workers crash immediately | Run `python diagnose.py` — pinpoints the exact issue |
 | `Login failed` for your user | Delete `data/lms.db` and restart workers (re-seeds DB) |
-| Camunda rejects user ID (`invalid id`) | Use hyphens, not underscores — `john-doe`, not `john_doe` |
+| Camunda rejects user ID (`invalid id`) | IDs must be alphanumeric only — no `_` or `-` (e.g. `johndoe`, not `john_doe` or `john-doe`) |
 | Camunda rejects password | Default policy requires ≥10 chars + upper + lower + digit + special |
 | `${initiator}` cannot be resolved | Add `camunda:initiator="initiator"` to the start event |
 | No tasks in Tasklist | Run `python deploy.py` first |
