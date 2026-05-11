@@ -34,7 +34,7 @@
       </bpmn:lane>
     </bpmn:laneSet>
 
-    <bpmn:startEvent id="Start_OB" name="Student Account Created">
+    <bpmn:startEvent id="Start_OB" name="Student Account Created" camunda:initiator="initiator">
       <bpmn:outgoing>F_OB_01</bpmn:outgoing>
     </bpmn:startEvent>
 

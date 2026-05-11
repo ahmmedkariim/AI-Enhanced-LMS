@@ -39,7 +39,7 @@
       </bpmn:lane>
     </bpmn:laneSet>
 
-    <bpmn:startEvent id="Start_AQ" name="Quiz Requested">
+    <bpmn:startEvent id="Start_AQ" name="Quiz Requested" camunda:initiator="initiator">
       <bpmn:outgoing>F_AQ_01</bpmn:outgoing>
     </bpmn:startEvent>
 

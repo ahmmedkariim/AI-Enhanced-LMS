@@ -38,7 +38,7 @@
     </bpmn:laneSet>
 
     <!-- START: An activity was completed (quiz, team task, exploration, etc.) -->
-    <bpmn:startEvent id="GM_Start" name="Activity Completed">
+    <bpmn:startEvent id="GM_Start" name="Activity Completed" camunda:initiator="initiator">
       <bpmn:extensionElements>
         <camunda:executionListener event="start">
           <camunda:script scriptFormat="JavaScript">

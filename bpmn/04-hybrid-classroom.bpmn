@@ -40,7 +40,7 @@
         <bpmn:flowNodeRef>Task_HC_GeneratePostQuiz</bpmn:flowNodeRef>
       </bpmn:lane>
     </bpmn:laneSet>
-    <bpmn:startEvent id="Start_HC" name="Lecture Scheduled">
+    <bpmn:startEvent id="Start_HC" name="Lecture Scheduled" camunda:initiator="initiator">
       <bpmn:outgoing>F_HC_01</bpmn:outgoing>
     </bpmn:startEvent>
     <bpmn:userTask id="Task_HC_StartLecture" name="Start Lecture Session" camunda:formKey="camunda-forms:deployment:start-lecture.form" camunda:candidateGroups="instructor">

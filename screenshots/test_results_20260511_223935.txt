@@ -1,0 +1,81 @@
+AI-Enhanced LMS — E2E Test Results
+Run at: 2026-05-11T22:39:35.576831
+Camunda: http://localhost:8080/engine-rest
+Passed: 5/5 (100%)
+
+⚠️  Make sure workers are running in another terminal!
+   python -m workers.main
+
+✅ Camunda connected
+
+
+═══════════════════════════════════════════════════════
+  TEST 1: Authentication & Role Assignment
+═══════════════════════════════════════════════════════
+
+  🔐 Test 1a: Valid student login (ahmed / password123)
+  ✅ Process started → ID: fc9d50a9...
+  ⏳ Waiting for user task (Enter Credentials)...
+  📋 Task ready: 'Enter Credentials'
+  ✅ Credentials submitted
+  ⏳ Waiting for process to complete...
+  ⚠️  Process still running (workers may need more time)
+
+  🔐 Test 1b: Invalid login (wrong password)
+  ✅ Process started → ID: 0ec068e6...
+  ⏳ Waiting for user task (Enter Credentials)...
+  📋 Task ready: 'Enter Credentials'
+  ✅ Correctly looped to error/retry. Tasks: ['Show Error Message']
+
+═══════════════════════════════════════════════════════
+  TEST 2: Student Onboarding Process
+═══════════════════════════════════════════════════════
+
+  📝 Test 2a: Full student onboarding flow
+  ✅ Process started → ID: 1096d6c7...
+  ⏳ Waiting for user task (Submit Learning Goals)...
+  📋 Task ready: 'Submit Learning Goals and Preferences'
+  ✅ Learning goals submitted
+  ⏳ Waiting for user task (Review Profile)...
+  📋 Task ready: 'Review Personalized Learning Profile'
+  ✅ Profile review completed
+  ⏳ Waiting for process to complete...
+  ✅ Onboarding complete!
+
+═══════════════════════════════════════════════════════
+  TEST 3: Gamification & Reward Process
+═══════════════════════════════════════════════════════
+
+  🏆 Test 3a: High-performance quiz reward
+  ✅ Process started → ID: 17472de2...
+  ⏳ Waiting for user task (View Achievement)...
+  📋 Task ready: 'View Achievement'
+  ✅ Achievement viewed
+  ⏳ Waiting for process to complete...
+  ✅ Reward applied! Badge: Gold Badge - Quiz Master | Points: +100
+
+═══════════════════════════════════════════════════════
+  TEST 4: Adaptive Quiz Generation (LLM)
+═══════════════════════════════════════════════════════
+
+  🤖 Test 4a: LLM generates adaptive quiz
+  ✅ Process started → ID: 1a599e89...
+  ⏳ Waiting for user task (Take Quiz)...
+  📋 Task ready: 'Take Adaptive Quiz'
+  ✅ Quiz answers submitted
+  ⏳ Waiting for process to complete...
+  ✅ Quiz complete! Score: 40% | Passed: False
+
+═══════════════════════════════════════════════════════
+  📊 TEST SUMMARY
+═══════════════════════════════════════════════════════
+
+  Tests passed: 5/5
+  [████████████████████] 100%
+
+  📸 Take screenshots NOW for your submission:
+     Cockpit:  http://localhost:8080/camunda/app/cockpit/
+     Tasklist: http://localhost:8080/camunda/app/tasklist/
+
+  In Cockpit → Processes → Click any process → Click an instance
+  You will see the HIGHLIGHTED path the process took.
