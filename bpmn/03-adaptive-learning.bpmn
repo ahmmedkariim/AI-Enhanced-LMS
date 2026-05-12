@@ -33,7 +33,18 @@
         <bpmn:flowNodeRef>Task_AL_GenerateContent</bpmn:flowNodeRef>
       </bpmn:lane>
     </bpmn:laneSet>
-    <bpmn:startEvent id="Start_AL" name="Learning Session Started">
+    <bpmn:startEvent id="Start_AL" name="Learning Session Started" camunda:initiator="initiator">
+      <bpmn:extensionElements>
+        <camunda:executionListener event="start">
+          <camunda:script scriptFormat="JavaScript">
+            if (execution.getVariable("initiator") == null) {
+              var ctx = Packages.org.camunda.bpm.engine.impl.context.Context.getCommandContext();
+              var auth = (ctx != null) ? ctx.getAuthentication() : null;
+              execution.setVariable("initiator", (auth != null &amp;&amp; auth.getUserId() != null) ? auth.getUserId() : "demo");
+            }
+          </camunda:script>
+        </camunda:executionListener>
+      </bpmn:extensionElements>
       <bpmn:outgoing>F_AL_01</bpmn:outgoing>
     </bpmn:startEvent>
     <bpmn:serviceTask id="Task_AL_GetPerformance" name="Retrieve Student Performance Data" camunda:type="external" camunda:topic="get-student-performance">
@@ -41,7 +52,7 @@
       <bpmn:incoming>F_AL_01</bpmn:incoming>
       <bpmn:outgoing>F_AL_02</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:businessRuleTask id="Task_AL_DeterminePathDMN" name="Determine Learning Path (DMN 1)" camunda:resultVariable="learningPathResult" camunda:decisionRef="LearningPathDecision" camunda:mapDecisionResult="singleResult">
+    <bpmn:businessRuleTask id="Task_AL_DeterminePathDMN" name="Determine Learning Path (DMN 1)" camunda:resultVariable="nextLearningPath" camunda:decisionRef="LearningPathDecision" camunda:mapDecisionResult="singleEntry">
       <bpmn:incoming>F_AL_02</bpmn:incoming>
       <bpmn:outgoing>F_AL_03</bpmn:outgoing>
     </bpmn:businessRuleTask>
@@ -118,6 +129,14 @@
       <bpmn:outgoing>F_AL_22</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:businessRuleTask id="Task_AL_AdjustDifficultyDMN" name="Adjust Quiz Difficulty (DMN 4)" camunda:resultVariable="difficultyResult" camunda:decisionRef="QuizDifficultyDecision" camunda:mapDecisionResult="singleResult">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:outputParameter name="nextDifficulty">${difficultyResult.nextDifficulty}</camunda:outputParameter>
+          <camunda:outputParameter name="questionCount">${difficultyResult.questionCount}</camunda:outputParameter>
+          <camunda:outputParameter name="provideHints">${difficultyResult.provideHints}</camunda:outputParameter>
+          <camunda:outputParameter name="timeLimitSeconds">${difficultyResult.timeLimitSeconds}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
       <bpmn:incoming>F_AL_22</bpmn:incoming>
       <bpmn:outgoing>F_AL_23</bpmn:outgoing>
     </bpmn:businessRuleTask>

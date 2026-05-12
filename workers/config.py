@@ -115,4 +115,5 @@ LEARNING_TOPICS = [
     "create-quiz-session",
     "grade-quiz-responses",
     "prepare-lecture-materials",
+    "setup-lecture-session",
 ]

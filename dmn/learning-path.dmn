@@ -2,9 +2,9 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:camunda="http://camunda.org/schema/1.0/dmn" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" id="learning_path_definitions" name="Learning Path Decision" namespace="http://camunda.org/schema/1.0/dmn" exporter="Camunda Modeler" exporterVersion="5.45.0">
   <decision id="LearningPathDecision" name="Learning Path Decision" camunda:historyTimeToLive="180">
     <decisionTable id="DecisionTable_LearningPath" hitPolicy="FIRST">
-      <input id="input_quizScore" label="Quiz Score" camunda:inputVariable="quizScore">
+      <input id="input_quizScore" label="Quiz Score Level" camunda:inputVariable="quizScoreLevel">
         <inputExpression id="inputExpression_quizScore" typeRef="string">
-          <text>quizScore</text>
+          <text>quizScoreLevel</text>
         </inputExpression>
         <inputValues id="inputValues_quizScore">
           <text>"High","Medium","Low"</text>

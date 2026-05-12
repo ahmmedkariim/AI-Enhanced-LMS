@@ -107,6 +107,8 @@ def _init_student_session(task):
         "sessionId":     session_id,
         "dashboardData": str(dashboard_data),
         "redirectUrl":   "/student/learning-hub",
+        "assignedRole":  "STUDENT",
+        "permissions":   "view_courses,take_quizzes,participate_lectures,earn_rewards",
     })
     logger.info("✅ Student session created: %s → sessionId=%s", username, session_id)
 
@@ -127,9 +129,10 @@ def _init_instructor_session(task):
         send_welcome_email(user_email, username, "Instructor", "/instructor/teaching-dashboard")
 
     return task.complete({
-        "sessionId":   session_id,
-        "redirectUrl": "/instructor/teaching-dashboard",
-        "permissions": "manage_content,monitor_students,grade_assignments,start_lectures",
+        "sessionId":     session_id,
+        "redirectUrl":   "/instructor/teaching-dashboard",
+        "permissions":   "manage_content,monitor_students,grade_assignments,start_lectures",
+        "assignedRole":  "INSTRUCTOR",
     })
     logger.info("✅ Instructor session created: %s", username)
 
@@ -150,9 +153,10 @@ def _init_admin_session(task):
         send_welcome_email(user_email, username, "Admin", "/admin/dashboard")
 
     return task.complete({
-        "sessionId":   session_id,
-        "redirectUrl": "/admin/dashboard",
-        "permissions": "system_control,user_management,full_access",
+        "sessionId":     session_id,
+        "redirectUrl":   "/admin/dashboard",
+        "permissions":   "system_control,user_management,full_access",
+        "assignedRole":  "ADMIN",
     })
     logger.info("✅ Admin session created: %s", username)
 

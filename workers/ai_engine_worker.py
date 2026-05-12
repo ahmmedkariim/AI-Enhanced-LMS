@@ -136,15 +136,20 @@ def mock_get_student_performance(student_id: str) -> dict:
     consecutive = last_quiz["consecutive_correct"] if last_quiz else 0
     avg_time = last_quiz["avg_time_seconds"] if last_quiz else 60
 
+    # previousScore (numeric) is needed by QuizDifficultyDecision DMN
     return {
         "totalPoints":           total_points,
         "lastQuizScore":         last_score,
+        "previousScore":         last_score,
         "lastDifficulty":        last_difficulty,
         "consecutiveCorrect":    consecutive,
         "averageTimeSeconds":    avg_time,
         "quizScoreLevel":        "High" if last_score >= 70 else ("Medium" if last_score >= 45 else "Low"),
         "engagementLevel":       "High" if total_points > 300 else ("Medium" if total_points > 100 else "Low"),
         "weeklyStreak":          profile.get("weekly_streak", 0) if profile else 0,
+        "learningStyle":         profile.get("learning_style", "Visual") if profile else "Visual",
+        "personalityType":       profile.get("personality", "Analytical") if profile else "Analytical",
+        "experienceLevel":       profile.get("experience", "Beginner") if profile else "Beginner",
     }
 
 

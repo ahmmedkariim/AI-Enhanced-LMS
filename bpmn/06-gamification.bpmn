@@ -191,10 +191,10 @@
     <bpmn:sequenceFlow id="GM_Flow_02" sourceRef="GM_Task_DetermineReward" targetRef="GM_Gateway_RewardTier" />
 
     <bpmn:sequenceFlow id="GM_Flow_Tier_Premium" name="Gold / Trophy" sourceRef="GM_Gateway_RewardTier" targetRef="GM_Task_AwardPremiumBadge">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${rewardResult.rewardType.contains("Gold") || rewardResult.rewardType.contains("Trophy") || rewardResult.rewardType.contains("Champion") || rewardResult.rewardType.contains("Hidden")}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${rewardResult != null &amp;&amp; rewardResult.rewardType != null &amp;&amp; (rewardResult.rewardType.contains("Gold") || rewardResult.rewardType.contains("Trophy") || rewardResult.rewardType.contains("Champion") || rewardResult.rewardType.contains("Hidden"))}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="GM_Flow_Tier_Standard" name="Silver / Team" sourceRef="GM_Gateway_RewardTier" targetRef="GM_Task_AwardStandardBadge">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${rewardResult.rewardType.contains("Silver") || rewardResult.rewardType.contains("Team") || rewardResult.rewardType.contains("Badge")}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${rewardResult != null &amp;&amp; rewardResult.rewardType != null &amp;&amp; (rewardResult.rewardType.contains("Silver") || rewardResult.rewardType.contains("Team") || rewardResult.rewardType.contains("Badge"))}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="GM_Flow_Tier_Default" name="Participation" sourceRef="GM_Gateway_RewardTier" targetRef="GM_Task_AwardParticipation" />
 
@@ -215,7 +215,7 @@
     <bpmn:sequenceFlow id="GM_Flow_04" sourceRef="GM_Gateway_IncJoin" targetRef="GM_Gateway_Milestone" />
 
     <bpmn:sequenceFlow id="GM_Flow_YesMilestone" name="Yes - milestone!" sourceRef="GM_Gateway_Milestone" targetRef="GM_Task_UnlockAchievement">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${totalPoints >= 100 || weeklyStreak >= 7}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${(totalPoints != null ? totalPoints : 0) >= 100 || (weeklyStreak != null ? weeklyStreak : 0) >= 7}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="GM_Flow_NoMilestone" name="No milestone" sourceRef="GM_Gateway_Milestone" targetRef="GM_Task_SendAchievementEmail" />
     <bpmn:sequenceFlow id="GM_Flow_Achievement_Email" sourceRef="GM_Task_UnlockAchievement" targetRef="GM_Task_SendAchievementEmail" />

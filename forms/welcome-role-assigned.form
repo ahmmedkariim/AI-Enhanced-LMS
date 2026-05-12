@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 2,
+  "exporter": { "name": "Camunda Modeler", "version": "5.21.0" },
+  "id": "form-welcome-role",
+  "type": "default",
+  "components": [
+    {
+      "type": "text",
+      "text": "## ✅ Login Successful\nThe DMN role-assignment decision has classified your account and a session has been initialized.",
+      "id": "text-header"
+    },
+    {
+      "type": "textfield",
+      "id": "assignedRoleEcho",
+      "key": "assignedRole",
+      "label": "Assigned role",
+      "description": "From DMN: RoleAssignmentDecision",
+      "disabled": true
+    },
+    {
+      "type": "textfield",
+      "id": "redirectUrlEcho",
+      "key": "redirectUrl",
+      "label": "Your dashboard URL",
+      "disabled": true
+    },
+    {
+      "type": "textfield",
+      "id": "permissionsEcho",
+      "key": "permissions",
+      "label": "Granted permissions",
+      "disabled": true
+    },
+    {
+      "type": "textfield",
+      "id": "sessionIdEcho",
+      "key": "sessionId",
+      "label": "Session ID",
+      "disabled": true
+    },
+    {
+      "type": "checkbox",
+      "id": "acknowledgeLogin",
+      "key": "acknowledgeLogin",
+      "label": "Continue to my dashboard",
+      "defaultValue": true,
+      "validate": { "required": true }
+    }
+  ]
+}

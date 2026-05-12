@@ -10,6 +10,36 @@
       "id": "text-header"
     },
     {
+      "type": "textarea",
+      "id": "learningGoalsEcho",
+      "key": "learningGoals",
+      "label": "Your stated goals",
+      "description": "What you told us you want to learn",
+      "disabled": true
+    },
+    {
+      "type": "textfield",
+      "id": "subjectAreasEcho",
+      "key": "subjectAreas",
+      "label": "Subject areas",
+      "disabled": true
+    },
+    {
+      "type": "textfield",
+      "id": "learningStyleEcho",
+      "key": "learningStyle",
+      "label": "Identified learning style",
+      "disabled": true
+    },
+    {
+      "type": "textfield",
+      "id": "personalityEcho",
+      "key": "personality",
+      "label": "AI-assessed personality type",
+      "description": "Inferred from your goals + style",
+      "disabled": true
+    },
+    {
       "type": "textfield",
       "id": "assignedPath",
       "key": "assignedPath",

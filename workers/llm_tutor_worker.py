@@ -103,15 +103,43 @@ FEEDBACK_TEMPLATES = {
 def build_mock_quiz(difficulty: str, question_count: int, topic: str = "General Programming") -> dict:
     """Build a realistic mock quiz for the given difficulty."""
     pool = QUIZ_TEMPLATES.get(difficulty, QUIZ_TEMPLATES["Medium"])
-    selected = random.sample(pool, min(question_count, len(pool)))
+    # Ensure at least 5 questions for the form by topping up from other pools if needed
+    target = max(question_count, 5)
+    if len(pool) < target:
+        extra_pool = [q for diff, qs in QUIZ_TEMPLATES.items() if diff != difficulty for q in qs]
+        pool = pool + extra_pool
+    selected = random.sample(pool, min(target, len(pool)))
 
     quiz_id = f"quiz-{difficulty.lower()}-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+
+    # Flatten the first 5 questions into per-field variables so the form can bind to them
+    flat_questions = {}
+    for i in range(5):
+        if i < len(selected):
+            q = selected[i]
+            opts = q.get("options", ["?", "?", "?", "?"])
+            opts = (opts + ["—", "—", "—", "—"])[:4]
+            flat_questions[f"q{i+1}Text"] = q.get("q", "Question unavailable")
+            flat_questions[f"q{i+1}OptA"] = opts[0]
+            flat_questions[f"q{i+1}OptB"] = opts[1]
+            flat_questions[f"q{i+1}OptC"] = opts[2]
+            flat_questions[f"q{i+1}OptD"] = opts[3]
+            flat_questions[f"q{i+1}Correct"] = str(q.get("answer", 0))
+        else:
+            flat_questions[f"q{i+1}Text"] = ""
+            flat_questions[f"q{i+1}OptA"] = ""
+            flat_questions[f"q{i+1}OptB"] = ""
+            flat_questions[f"q{i+1}OptC"] = ""
+            flat_questions[f"q{i+1}OptD"] = ""
+            flat_questions[f"q{i+1}Correct"] = ""
+
     return {
         "quizId":         quiz_id,
         "topic":          topic,
         "difficulty":     difficulty,
         "questionCount":  len(selected),
         "timeLimitSecs":  question_count * 60,
+        **flat_questions,
         "questions":      json.dumps(selected),
         "generatedBy":    "LLM Tutor (Mock)",
         "generatedAt":    datetime.utcnow().isoformat(),
@@ -195,10 +223,13 @@ def handle_llm_task(task):
                 feedback = random.choice(FEEDBACK_TEMPLATES["good"])
             else:
                 feedback = random.choice(FEEDBACK_TEMPLATES["needs_work"])
+            next_challenge = "Try the expert-level quiz!" if score >= 80 else "Practice 10 more exercises"
             result = {
-                "feedbackText":   feedback,
+                "feedbackText":    feedback,
                 "motivationLevel": "High" if score >= 75 else "Medium",
-                "nextChallenge":  "Try the expert-level quiz!" if score >= 80 else "Practice 10 more exercises",
+                "nextChallenge":   next_challenge,
+                "resultSummary":   f"{feedback}\n\nNext step: {next_challenge}",
+                "studyTips":       "",
             }
 
         elif topic == "generate-remedial-explanation":
@@ -206,11 +237,15 @@ def handle_llm_task(task):
             real_explanation = generate_with_llm(
                 f"Explain '{weak_topics}' in simple terms for a {learning_style} learner in 2-3 sentences."
             )
+            remedial_text = real_explanation or f"Let's revisit '{weak_topics}'. Focus on building a strong foundation before advancing."
+            exercises     = f"Complete 5 practice problems on {weak_topics}"
+            tips          = f"As a {learning_style} learner, try {'drawing diagrams' if learning_style == 'Visual' else 'explaining aloud' if learning_style == 'Auditory' else 'hands-on practice'}"
             result = {
-                "remedialContent":    real_explanation or f"Let's revisit '{weak_topics}'. Focus on building a strong foundation before advancing.",
-                "remedialExercises":  f"Complete 5 practice problems on {weak_topics}",
-                "studyTips":          f"As a {learning_style} learner, try {'drawing diagrams' if learning_style == 'Visual' else 'explaining aloud' if learning_style == 'Auditory' else 'hands-on practice'}",
+                "remedialContent":     remedial_text,
+                "remedialExercises":   exercises,
+                "studyTips":           tips,
                 "estimatedReviewMins": random.randint(15, 30),
+                "resultSummary":       f"{remedial_text}\n\nSuggested exercises: {exercises}",
             }
 
         elif topic == "assign-llm-tutor":

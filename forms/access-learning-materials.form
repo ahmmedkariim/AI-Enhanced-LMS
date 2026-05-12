@@ -6,7 +6,7 @@
   "components": [
     {
       "type": "text",
-      "text": "## 🎓 Your Personalized Learning Materials\nBased on your profile and DMN decision, here is your assigned learning path.",
+      "text": "## 🎓 Your Personalized Learning Materials\nBased on your profile and the DMN learning-path decision, here is what's been assigned to you.",
       "id": "text-header"
     },
     {
@@ -18,31 +18,30 @@
       "disabled": true
     },
     {
-      "type": "text",
-      "text": "---\n**Complete an activity to proceed:**",
-      "id": "text-divider"
+      "type": "textfield",
+      "id": "primaryContentName",
+      "key": "primaryContentName",
+      "label": "Primary Module",
+      "disabled": true
     },
     {
-      "type": "select",
-      "id": "activityType",
-      "key": "activityType",
-      "label": "Activity Completed",
-      "defaultValue": "Quiz",
-      "values": [
-        { "label": "📝 Quiz",              "value": "Quiz" },
-        { "label": "🤝 Team Task",         "value": "TeamTask" },
-        { "label": "🔍 Exploration",       "value": "Exploration" },
-        { "label": "📖 Reading",           "value": "Reading" },
-        { "label": "🧪 Lab Exercise",      "value": "Lab" }
-      ],
-      "validate": { "required": true }
+      "type": "textfield",
+      "id": "practiceName",
+      "key": "practiceName",
+      "label": "Practice Exercise",
+      "disabled": true
+    },
+    {
+      "type": "text",
+      "text": "---\n**Mark this learning activity as completed to continue the process:**",
+      "id": "text-divider"
     },
     {
       "type": "checkbox",
       "id": "activityCompleted",
       "key": "activityCompleted",
-      "label": "I have completed this activity",
-      "defaultValue": false,
+      "label": "I have reviewed the materials above and completed this study session",
+      "defaultValue": true,
       "validate": { "required": true }
     }
   ]

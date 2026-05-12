@@ -14,6 +14,8 @@
       <bpmn:lane id="Lane_AQ_Student" name="Student">
         <bpmn:flowNodeRef>Start_AQ</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_AQ_TakeQuiz</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AQ_ReviewResult</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>GW_AQ_FinalSplit</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>End_AQ_Pass</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>End_AQ_Remedial</bpmn:flowNodeRef>
       </bpmn:lane>
@@ -73,10 +75,16 @@
       <bpmn:outgoing>F_AQ_07</bpmn:outgoing>
     </bpmn:serviceTask>
 
-    <bpmn:serviceTask id="Task_AQ_NotifyStudent" name="Notify Student via Email" camunda:type="external" camunda:topic="notify-student-quiz-ready">
+    <bpmn:scriptTask id="Task_AQ_NotifyStudent" name="Log Quiz Ready Notification" scriptFormat="JavaScript">
       <bpmn:incoming>F_AQ_06</bpmn:incoming>
       <bpmn:outgoing>F_AQ_08</bpmn:outgoing>
-    </bpmn:serviceTask>
+      <bpmn:script>
+        // In-engine notification log. No external worker, no email required —
+        // the student is already in Tasklist, so we just timestamp readiness.
+        execution.setVariable("quizReadyAt", new java.util.Date().toString());
+        execution.setVariable("quizReadyNotice", "Your adaptive quiz is ready to take.");
+      </bpmn:script>
+    </bpmn:scriptTask>
 
     <!-- PARALLEL JOIN -->
     <bpmn:parallelGateway id="GW_AQ_ParJoin" name="Quiz Ready">
@@ -135,15 +143,29 @@
     <bpmn:serviceTask id="Task_AQ_SendResults" name="Send Quiz Results Email" camunda:type="external" camunda:topic="send-quiz-results-email">
       <bpmn:incoming>F_AQ_15</bpmn:incoming>
       <bpmn:outgoing>F_AQ_16</bpmn:outgoing>
-      <bpmn:outgoing>F_AQ_17</bpmn:outgoing>
     </bpmn:serviceTask>
 
-    <bpmn:endEvent id="End_AQ_Pass" name="Quiz Complete - Passed">
+    <!-- Student reviews quiz result -->
+    <bpmn:userTask id="Task_AQ_ReviewResult" name="Review Your Quiz Result"
+                   camunda:assignee="${initiator}"
+                   camunda:formKey="camunda-forms:deployment:quiz-result.form">
       <bpmn:incoming>F_AQ_16</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_17</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <!-- EXCLUSIVE GATEWAY: end via pass or remedial branch -->
+    <bpmn:exclusiveGateway id="GW_AQ_FinalSplit" name="Pass or Remedial?" default="F_AQ_FinalFail">
+      <bpmn:incoming>F_AQ_17</bpmn:incoming>
+      <bpmn:outgoing>F_AQ_FinalPass</bpmn:outgoing>
+      <bpmn:outgoing>F_AQ_FinalFail</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:endEvent id="End_AQ_Pass" name="Quiz Complete - Passed">
+      <bpmn:incoming>F_AQ_FinalPass</bpmn:incoming>
     </bpmn:endEvent>
 
     <bpmn:endEvent id="End_AQ_Remedial" name="Quiz Complete - Remedial Assigned">
-      <bpmn:incoming>F_AQ_17</bpmn:incoming>
+      <bpmn:incoming>F_AQ_FinalFail</bpmn:incoming>
     </bpmn:endEvent>
 
     <!-- SEQUENCE FLOWS -->
@@ -160,18 +182,18 @@
     <bpmn:sequenceFlow id="F_AQ_11" sourceRef="Task_AQ_GradeResponses" targetRef="Task_AQ_AnalyzePerformance"/>
     <bpmn:sequenceFlow id="F_AQ_12" sourceRef="Task_AQ_AnalyzePerformance" targetRef="GW_AQ_PassFail"/>
     <bpmn:sequenceFlow id="F_AQ_Pass" name="Pass (>=60%)" sourceRef="GW_AQ_PassFail" targetRef="Task_AQ_GeneratePositiveFeedback">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${quizScore >= 60}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${(quizScore != null ? quizScore : 0) >= 60}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="F_AQ_Fail" name="Fail (&lt;60%)" sourceRef="GW_AQ_PassFail" targetRef="Task_AQ_GenerateRemedialExplanation"/>
     <bpmn:sequenceFlow id="F_AQ_13" sourceRef="Task_AQ_GeneratePositiveFeedback" targetRef="Task_AQ_UpdateProgress"/>
     <bpmn:sequenceFlow id="F_AQ_14" sourceRef="Task_AQ_GenerateRemedialExplanation" targetRef="Task_AQ_UpdateProgress"/>
     <bpmn:sequenceFlow id="F_AQ_15" sourceRef="Task_AQ_UpdateProgress" targetRef="Task_AQ_SendResults"/>
-    <bpmn:sequenceFlow id="F_AQ_16" name="Pass path" sourceRef="Task_AQ_SendResults" targetRef="End_AQ_Pass">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${quizScore >= 60}</bpmn:conditionExpression>
+    <bpmn:sequenceFlow id="F_AQ_16" sourceRef="Task_AQ_SendResults" targetRef="Task_AQ_ReviewResult"/>
+    <bpmn:sequenceFlow id="F_AQ_17" sourceRef="Task_AQ_ReviewResult" targetRef="GW_AQ_FinalSplit"/>
+    <bpmn:sequenceFlow id="F_AQ_FinalPass" name="Pass (&gt;=60)" sourceRef="GW_AQ_FinalSplit" targetRef="End_AQ_Pass">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${(quizScore != null ? quizScore : 0) &gt;= 60}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="F_AQ_17" name="Remedial path" sourceRef="Task_AQ_SendResults" targetRef="End_AQ_Remedial">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${quizScore &lt; 60}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="F_AQ_FinalFail" name="Remedial" sourceRef="GW_AQ_FinalSplit" targetRef="End_AQ_Remedial"/>
   </bpmn:process>
 
   <bpmndi:BPMNDiagram id="BPMNDiagram_AQ">

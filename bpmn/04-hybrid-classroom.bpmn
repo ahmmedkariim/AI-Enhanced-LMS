@@ -12,7 +12,7 @@
         <bpmn:flowNodeRef>End_HC_Complete</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>End_HC_Denied</bpmn:flowNodeRef>
       </bpmn:lane>
-      <bpmn:lane id="Lane_HC_Instructor" name="Instructor">
+      <bpmn:lane id="Lane_HC_Instructor" name="Instructor (auto-setup)">
         <bpmn:flowNodeRef>Task_HC_StartLecture</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_HC_LMS" name="LMS System">
@@ -43,10 +43,10 @@
     <bpmn:startEvent id="Start_HC" name="Lecture Scheduled" camunda:initiator="initiator">
       <bpmn:outgoing>F_HC_01</bpmn:outgoing>
     </bpmn:startEvent>
-    <bpmn:userTask id="Task_HC_StartLecture" name="Start Lecture Session" camunda:formKey="camunda-forms:deployment:start-lecture.form" camunda:candidateGroups="instructor">
+    <bpmn:serviceTask id="Task_HC_StartLecture" name="Setup Lecture Session" camunda:type="external" camunda:topic="setup-lecture-session">
       <bpmn:incoming>F_HC_01</bpmn:incoming>
       <bpmn:outgoing>F_HC_02</bpmn:outgoing>
-    </bpmn:userTask>
+    </bpmn:serviceTask>
     <bpmn:parallelGateway id="GW_HC_PrepSplit" name="Prepare Lecture">
       <bpmn:incoming>F_HC_02</bpmn:incoming>
       <bpmn:outgoing>F_HC_03</bpmn:outgoing>
@@ -183,7 +183,7 @@
     <bpmn:sequenceFlow id="F_HC_25" sourceRef="Task_HC_GeneratePostQuiz" targetRef="Task_HC_PostLectureQuiz" />
     <bpmn:sequenceFlow id="F_HC_26" sourceRef="Task_HC_PostLectureQuiz" targetRef="GW_HC_PassFail" />
     <bpmn:sequenceFlow id="F_HC_Pass" name="Yes (&#62;=70)" sourceRef="GW_HC_PassFail" targetRef="Task_HC_AwardBadge">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${quizScore &gt;= 70}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${(quizScore != null ? quizScore : 0) &gt;= 70}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="F_HC_Fail" name="No (&#60;70)" sourceRef="GW_HC_PassFail" targetRef="Task_HC_Remedial" />
     <bpmn:sequenceFlow id="F_HC_27" sourceRef="Task_HC_AwardBadge" targetRef="End_HC_Complete" />

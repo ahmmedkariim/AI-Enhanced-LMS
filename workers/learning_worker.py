@@ -105,6 +105,9 @@ def handle_learning_task(task):
         elif topic == "prepare-lecture-materials":
             result = _prepare_lecture(course_id, task)
 
+        elif topic == "setup-lecture-session":
+            result = _setup_lecture_session(course_id, task)
+
         else:
             logger.warning("Unknown learning topic: %s", topic)
             result = {"status": "completed", "topic": topic}
@@ -133,6 +136,12 @@ def _create_student_profile(task, student_id: str, learning_style: str) -> dict:
     upsert_student_profile(student_id, data)
 
     profile_id = f"profile-{student_id}-{datetime.utcnow().strftime('%Y%m%d')}"
+    courses    = COURSE_CATALOG.get(data["learning_style"], COURSE_CATALOG["Visual"])
+    primary    = courses[0]["name"] if courses else "Core Curriculum"
+    assigned_path = (
+        f"{data['learning_style']}-{data['personality']} Track "
+        f"({data['experience']}) → starts with: {primary}"
+    )
     logger.info("👤 Profile created: %s | style=%s | personality=%s",
                 student_id, data["learning_style"], data["personality"])
     return {
@@ -140,29 +149,40 @@ def _create_student_profile(task, student_id: str, learning_style: str) -> dict:
         "profileId":       profile_id,
         "learningStyle":   data["learning_style"],
         "personality":     data["personality"],
+        "assignedPath":    assigned_path,
     }
 
 
 def _assign_primary_content(task, student_id: str, learning_style: str) -> dict:
     """Assign the primary learning content based on learning path decision."""
-    next_path    = task.get_variable("nextLearningPath") or "Standard Learning Content"
+    dmn_path     = task.get_variable("nextLearningPath")
     path_priority = task.get_variable("pathPriority") or "Normal"
 
     courses = COURSE_CATALOG.get(learning_style, COURSE_CATALOG["Visual"])
     primary = courses[0]
 
+    # If the DMN didn't match a rule, synthesize a personalized path string so the
+    # downstream user-task form doesn't show a generic placeholder.
+    next_path = dmn_path or f"{learning_style} Track — Foundations to Mastery (starts with: {primary['name']})"
+
     assign_resource(student_id, "primary", primary["id"], primary["name"])
-    logger.info("📖 Primary content assigned: %s → %s", student_id, primary["name"])
+    logger.info("📖 Primary content assigned: %s → %s | path=%s", student_id, primary["name"], next_path)
+
+    recommended_lines = [f"• {c['name']} ({c['format']}, {c['duration']} min)" for c in courses]
+    recommended_lines += [f"• {s['name']} ({s['format']})" for s in SUPPLEMENTARY_RESOURCES[:2]]
+    recommended_resources = "\n".join(recommended_lines)
 
     return {
-        "primaryContentId":   primary["id"],
-        "primaryContentName": primary["name"],
-        "contentFormat":      primary["format"],
-        "estimatedMins":      primary["duration"],
-        "learningPath":       next_path,
-        "pathPriority":       path_priority,
-        "assignedAt":         datetime.utcnow().isoformat(),
-        "assignedResources":  primary["name"],
+        "primaryContentId":      primary["id"],
+        "primaryContentName":    primary["name"],
+        "contentFormat":         primary["format"],
+        "estimatedMins":         primary["duration"],
+        "learningPath":          next_path,
+        "nextLearningPath":      next_path,
+        "pathPriority":          path_priority,
+        "assignedAt":            datetime.utcnow().isoformat(),
+        "assignedResources":     primary["name"],
+        "recommendedResources":  recommended_resources,
     }
 
 
@@ -280,28 +300,35 @@ def _create_quiz_session(student_id: str, task) -> dict:
 
 
 def _grade_quiz(student_id: str, task) -> dict:
-    """Grade student quiz responses."""
-    questions_json  = task.get_variable("questions") or "[]"
-    answers_json    = task.get_variable("studentAnswers") or "[]"
-    difficulty      = task.get_variable("nextDifficulty") or "Medium"
-    avg_time        = int(task.get_variable("avgTimeSeconds") or 60)
+    """Grade student quiz responses from per-question form fields."""
+    difficulty   = task.get_variable("nextDifficulty") or "Medium"
 
-    # Parse or mock the grading
-    try:
-        questions = json.loads(questions_json) if isinstance(questions_json, str) else []
-        answers   = json.loads(answers_json) if isinstance(answers_json, str) else []
-        if questions and answers:
-            correct = sum(1 for i, q in enumerate(questions)
-                         if i < len(answers) and answers[i] == q.get("answer", -1))
-            score = int((correct / len(questions)) * 100)
-            consecutive_correct = correct
-        else:
-            # No real answers submitted — mock a realistic score for demo
-            score = random.randint(45, 90)
-            consecutive_correct = score // 20
-    except Exception:
-        score = random.randint(50, 85)
-        consecutive_correct = 3
+    # Time spent comes from execution listeners on the user task (auto-computed).
+    time_spent   = int(task.get_variable("timeSpentSeconds") or 0)
+
+    # Pull each question's correct answer (from build_mock_quiz output) and the student's answer
+    correct_count = 0
+    total = 0
+    for i in range(1, 6):
+        student_ans  = task.get_variable(f"q{i}Answer")
+        correct_ans  = task.get_variable(f"q{i}Correct")
+        if correct_ans is None or correct_ans == "":
+            continue
+        total += 1
+        # Both are string indices ("0".."3")
+        if str(student_ans) == str(correct_ans):
+            correct_count += 1
+
+    if total == 0:
+        # No question variables at all — fall back to mock so the process doesn't crash
+        score = random.randint(45, 90)
+        correct_count = score // 20
+        total = 5
+    else:
+        score = int(round((correct_count / total) * 100))
+
+    consecutive_correct = correct_count
+    avg_time = max(int(time_spent / max(total, 1)), 5) if time_spent > 0 else 60
 
     passed       = score >= 60
     score_level  = "High" if score >= 70 else "Medium" if score >= 45 else "Low"
@@ -323,19 +350,69 @@ def _grade_quiz(student_id: str, task) -> dict:
     }
 
 
+POLL_QUESTIONS = [
+    ("How confident do you feel about today's topic so far?",
+     "How well are you keeping up with the pace?"),
+    ("Which concept introduced today feels least clear?",
+     "Rate your engagement with this lecture so far."),
+    ("Did the visual examples help you understand the concept?",
+     "Would you prefer more hands-on examples next time?"),
+]
+
+TEAM_NAMES = [
+    "Phoenix Coders", "Quantum Hackers", "Binary Bards",
+    "Recursive Ravens", "Async Avengers", "Lambda Lions",
+    "Syntax Sentinels", "Buffer Overflowers",
+]
+
+TEAM_CHALLENGES = [
+    {"title": "API Scaling Challenge",
+     "problem": "Your microservice gets hit by 1 million requests per minute during a flash sale. Outline a strategy using caching, rate-limiting, and horizontal scaling. List the 3 most critical decisions."},
+    {"title": "Database Design Sprint",
+     "problem": "Design the schema for a multi-tenant SaaS LMS that has Students, Courses, Quizzes, and Submissions. Highlight one indexing decision and one normalization decision."},
+    {"title": "Algorithmic Trade-off",
+     "problem": "You need to find the top-10 trending posts from a 100M-row table updated every second. Compare two approaches (e.g., sorted set vs. windowed aggregation). Pick one and justify."},
+    {"title": "Debugging War Room",
+     "problem": "A production payment endpoint returns 500 for 2% of requests, with no stack trace. Outline the first 4 diagnostic steps you'd take and one tool you'd reach for at each step."},
+]
+
+
+LECTURE_TITLES = [
+    "Designing Resilient Microservices",
+    "Algorithms in Practice: Trees & Graphs",
+    "Concurrency Patterns and Pitfalls",
+    "Modeling Business Processes with BPMN",
+    "Database Internals: Indexes and Query Plans",
+]
+
+
+def _setup_lecture_session(course_id: str, task) -> dict:
+    """Auto-initialize a lecture session (replaces the manual instructor setup task)."""
+    title    = random.choice(LECTURE_TITLES)
+    duration = random.choice([60, 75, 90])
+    mode     = random.choice(["In-Person", "Hybrid", "Remote"])
+    logger.info("🎬 Lecture session auto-setup: %s | %s | %d min", title, mode, duration)
+    return {
+        "lectureTitle":      title,
+        "lectureTopic":      title,
+        "lectureTopics":     "Core concepts, common pitfalls, real-world examples, Q&A",
+        "estimatedDuration": duration,
+        "classroomMode":     mode,
+        "lectureStartedAt":  datetime.utcnow().isoformat(),
+    }
+
+
 def _prepare_lecture(course_id: str, task) -> dict:
     """Prepare lecture materials based on AI class profile analysis."""
     avg_engagement = task.get_variable("avgEngagementLevel") or "Medium"
     dominant_style = task.get_variable("dominantLearningStyle") or "Visual"
     at_risk_count  = int(task.get_variable("atRiskStudents") or 3)
     lecture_topic  = task.get_variable("lectureTopic") or "Software Engineering Fundamentals"
+    student_id     = task.get_variable("userId") or task.get_variable("studentId") or "unknown"
 
     materials = {
         "slides":       f"/lectures/{course_id}/slides-{datetime.utcnow().strftime('%Y%m%d')}.pdf",
         "in_class_quiz": f"/quizzes/inclass-{course_id}-{uuid.uuid4().hex[:6]}",
-        "poll_questions": ["What is your confidence level on today's topic?",
-                           "Which concept do you find most challenging?"],
-        "team_challenge": "Design a system that handles 1M requests/day",
     }
 
     adaptations = []
@@ -346,7 +423,19 @@ def _prepare_lecture(course_id: str, task) -> dict:
     if at_risk_count > 5:
         adaptations.append("Include extra Q&A time and peer support")
 
-    logger.info("🏫 Lecture prepared: course=%s topic=%s", course_id, lecture_topic)
+    # Pick a poll question varied by lecture topic length (deterministic mock)
+    poll_q1, poll_q2 = random.choice(POLL_QUESTIONS)
+
+    # Personality-driven team assignment (mock)
+    personality = task.get_variable("personalityType") or random.choice(
+        ["Collaborative", "Analytical", "Creative", "Pragmatic"]
+    )
+    team_name = random.choice(TEAM_NAMES) + f" ({personality})"
+
+    challenge = random.choice(TEAM_CHALLENGES)
+
+    logger.info("🏫 Lecture prepared: course=%s topic=%s team=%s",
+                course_id, lecture_topic, team_name)
     return {
         "lectureReady":       True,
         "lectureMaterials":   str(materials),
@@ -354,6 +443,11 @@ def _prepare_lecture(course_id: str, task) -> dict:
         "recommendedPace":    "Slower" if avg_engagement == "Low" else "Normal",
         "preparedAt":         datetime.utcnow().isoformat(),
         "lectureTopic":       lecture_topic,
+        "pollQuestion":       poll_q1,
+        "pollQuestionAlt":    poll_q2,
+        "teamName":           team_name,
+        "challengeTitle":     challenge["title"],
+        "challengeProblem":   challenge["problem"],
     }
 
 

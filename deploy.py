@@ -191,12 +191,13 @@ def main():
     # Forms bundled with each BPMN. The formKey "camunda-forms:deployment:<file>"
     # only resolves when the .form is in the SAME deployment as the BPMN.
     BPMN_FORMS = {
-        "01-authentication.bpmn":    ["enter-credentials.form", "show-error.form"],
+        "01-authentication.bpmn":    ["enter-credentials.form", "show-error.form",
+                                      "welcome-role-assigned.form"],
         "02-onboarding.bpmn":        ["submit-learning-goals.form", "review-profile.form"],
         "03-adaptive-learning.bpmn": ["access-learning-materials.form"],
-        "04-hybrid-classroom.bpmn":  ["start-lecture.form", "live-poll.form",
-                                      "team-challenge.form", "post-lecture-quiz.form"],
-        "05-adaptive-quiz.bpmn":     ["take-adaptive-quiz.form"],
+        "04-hybrid-classroom.bpmn":  ["live-poll.form", "team-challenge.form",
+                                      "post-lecture-quiz.form"],
+        "05-adaptive-quiz.bpmn":     ["take-adaptive-quiz.form", "quiz-result.form"],
         "06-gamification.bpmn":      ["view-achievement.form"],
     }
 

@@ -6,23 +6,35 @@
   "components": [
     {
       "type": "text",
-      "text": "## 🤝 Team Challenge\nYour AI-assigned team is ready! Work together to solve the challenge. Collaboration earns bonus points!",
+      "text": "## 🤝 Team Challenge\nAI has assigned you to a team based on your personality profile.",
       "id": "text-header"
     },
     {
       "type": "textfield",
       "id": "teamName",
       "key": "teamName",
-      "label": "Your Team Name",
-      "description": "Assigned by AI based on personality profiles",
+      "label": "Your team",
+      "description": "Assigned by AI based on personality profile",
       "disabled": true
+    },
+    {
+      "type": "textfield",
+      "id": "challengeTitle",
+      "key": "challengeTitle",
+      "label": "Challenge title",
+      "disabled": true
+    },
+    {
+      "type": "text",
+      "text": "### 🧩 The challenge\n{{ challengeProblem }}",
+      "id": "text-challenge-body"
     },
     {
       "type": "textarea",
       "id": "challengeResponse",
       "key": "challengeResponse",
-      "label": "Team Solution / Response",
-      "description": "Submit your team's answer to the challenge",
+      "label": "Your team's response",
+      "description": "Submit your team's answer to the challenge above",
       "validate": { "required": true }
     },
     {

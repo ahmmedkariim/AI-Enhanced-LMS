@@ -26,81 +26,93 @@
     },
     {
       "type": "text",
-      "text": "---\n### Answer the following questions:\n*(In a real system, questions load dynamically from the LLM)*",
-      "id": "text-questions"
+      "text": "---\n### Q1: {{ q1Text }}\n- **A** — {{ q1OptA }}\n- **B** — {{ q1OptB }}\n- **C** — {{ q1OptC }}\n- **D** — {{ q1OptD }}",
+      "id": "text-q1"
     },
     {
       "type": "select",
       "id": "q1Answer",
       "key": "q1Answer",
-      "label": "Q1: What is the hit policy FIRST in DMN?",
+      "label": "Your answer to Q1",
       "values": [
-        { "label": "A — All matching rules fire",               "value": "0" },
-        { "label": "B — Only the first matching rule fires",    "value": "1" },
-        { "label": "C — Rules are ranked by priority",         "value": "2" },
-        { "label": "D — A random rule fires",                  "value": "3" }
+        { "label": "A", "value": "0" },
+        { "label": "B", "value": "1" },
+        { "label": "C", "value": "2" },
+        { "label": "D", "value": "3" }
       ],
       "validate": { "required": true }
+    },
+    {
+      "type": "text",
+      "text": "---\n### Q2: {{ q2Text }}\n- **A** — {{ q2OptA }}\n- **B** — {{ q2OptB }}\n- **C** — {{ q2OptC }}\n- **D** — {{ q2OptD }}",
+      "id": "text-q2"
     },
     {
       "type": "select",
       "id": "q2Answer",
       "key": "q2Answer",
-      "label": "Q2: What does a Parallel Gateway do in BPMN?",
+      "label": "Your answer to Q2",
       "values": [
-        { "label": "A — Routes to only one branch",            "value": "0" },
-        { "label": "B — Fires all outgoing branches at once",  "value": "1" },
-        { "label": "C — Waits for an event to occur",         "value": "2" },
-        { "label": "D — Routes based on conditions",          "value": "3" }
+        { "label": "A", "value": "0" },
+        { "label": "B", "value": "1" },
+        { "label": "C", "value": "2" },
+        { "label": "D", "value": "3" }
       ],
       "validate": { "required": true }
+    },
+    {
+      "type": "text",
+      "text": "---\n### Q3: {{ q3Text }}\n- **A** — {{ q3OptA }}\n- **B** — {{ q3OptB }}\n- **C** — {{ q3OptC }}\n- **D** — {{ q3OptD }}",
+      "id": "text-q3"
     },
     {
       "type": "select",
       "id": "q3Answer",
       "key": "q3Answer",
-      "label": "Q3: What is an External Task in Camunda?",
+      "label": "Your answer to Q3",
       "values": [
-        { "label": "A — A task inside the engine",             "value": "0" },
-        { "label": "B — A task completed by an external worker polling via REST", "value": "1" },
-        { "label": "C — A task assigned to another process",  "value": "2" },
-        { "label": "D — A manual task with no automation",    "value": "3" }
+        { "label": "A", "value": "0" },
+        { "label": "B", "value": "1" },
+        { "label": "C", "value": "2" },
+        { "label": "D", "value": "3" }
       ],
       "validate": { "required": true }
+    },
+    {
+      "type": "text",
+      "text": "---\n### Q4: {{ q4Text }}\n- **A** — {{ q4OptA }}\n- **B** — {{ q4OptB }}\n- **C** — {{ q4OptC }}\n- **D** — {{ q4OptD }}",
+      "id": "text-q4"
     },
     {
       "type": "select",
       "id": "q4Answer",
       "key": "q4Answer",
-      "label": "Q4: What is the purpose of an Inclusive Gateway?",
+      "label": "Your answer to Q4",
       "values": [
-        { "label": "A — Routes to exactly one path",                   "value": "0" },
-        { "label": "B — Routes to all paths simultaneously",           "value": "1" },
-        { "label": "C — Routes to one or more paths based on conditions", "value": "2" },
-        { "label": "D — Waits for a timer",                            "value": "3" }
+        { "label": "A", "value": "0" },
+        { "label": "B", "value": "1" },
+        { "label": "C", "value": "2" },
+        { "label": "D", "value": "3" }
       ],
       "validate": { "required": true }
+    },
+    {
+      "type": "text",
+      "text": "---\n### Q5: {{ q5Text }}\n- **A** — {{ q5OptA }}\n- **B** — {{ q5OptB }}\n- **C** — {{ q5OptC }}\n- **D** — {{ q5OptD }}",
+      "id": "text-q5"
     },
     {
       "type": "select",
       "id": "q5Answer",
       "key": "q5Answer",
-      "label": "Q5: What does BPMN stand for?",
+      "label": "Your answer to Q5",
       "values": [
-        { "label": "A — Business Process Model and Notation",  "value": "0" },
-        { "label": "B — Basic Process Management Node",        "value": "1" },
-        { "label": "C — Business Programming Model Network",   "value": "2" },
-        { "label": "D — Binary Process Mapping Notation",      "value": "3" }
+        { "label": "A", "value": "0" },
+        { "label": "B", "value": "1" },
+        { "label": "C", "value": "2" },
+        { "label": "D", "value": "3" }
       ],
       "validate": { "required": true }
-    },
-    {
-      "type": "number",
-      "id": "timeSpentSeconds",
-      "key": "timeSpentSeconds",
-      "label": "Time spent (seconds)",
-      "defaultValue": 120,
-      "validate": { "required": true, "min": 10 }
     }
   ]
 }
